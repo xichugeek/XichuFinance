@@ -15,9 +15,9 @@ This document describes the current implementation. Production and release accep
 
 ## Current limits
 
-The access-token design has no refresh token or server-side token revocation. A valid token remains usable until expiration. Logout and Android secure token storage belong to the upcoming integration phase.
+The access-token design has no refresh token or server-side token revocation. A valid token remains usable until expiration. Android logout clears its local session; it does not revoke copied tokens on the server. The session is encrypted with Android Keystore AES-GCM before DataStore persistence, including its email and server binding. Device validation is part of PHASE 4.
 
-The current Room database is not encrypted. Device access controls therefore protect the local bookkeeping data. Android remote synchronization and user-specific local cache switching have not been implemented yet.
+Room databases are not encrypted. The app sandbox, disabled backups, and device access controls protect local bookkeeping data. Cloud caches are separate for each server/user pair. Logout hides the cached data and preserves its files for later login; local ledger data is independent.
 
 The local HTTP API is for development. Production requires HTTPS, the separate server preflight, explicit deployment approval, and runtime security verification. No production server or DNS has been changed.
 

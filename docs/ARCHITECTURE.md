@@ -8,7 +8,7 @@ The current app uses Kotlin, Jetpack Compose, Material 3, Navigation Compose, Vi
 
 Android money is stored as integer minor units (`Long`, cents for CNY). User input is converted through decimal parsing rather than floating-point arithmetic. Local month summaries are derived from stored transactions.
 
-Remote API integration and synchronization are PHASE 4 work and are not yet present. The current local MVP must not be described as a cloud-synchronized application.
+Remote API integration passed local acceptance in [PHASE 4](ANDROID_BACKEND_PHASE_4.md). Retrofit/OkHttp with kotlinx.serialization connects cloud-mode operations to FastAPI; DataStore persists a Keystore-encrypted session. Each server/user pair has a separate Room cache. The original local ledger is an independent mode and is never uploaded automatically.
 
 ## Backend
 
@@ -35,6 +35,6 @@ Compose runs `api` and `db` under project name `xichufinance`. The API is publis
 
 ## Later phases
 
-Android remote calls, token storage, synchronization, CSV import, richer charts, classification, and Ask Finance remain separate phase gates. The intended v1.0 sync contract is server data as the source for synced records and Room as the local cache/work copy, using timestamps and documented limitations. This contract is not claimed as implemented yet.
+CSV import, richer charts, classification, and Ask Finance remain separate phase gates. Android integration uses server data as the source for cloud records and Room for cached/offline reading, with full refreshes and server timestamps. Its verification and synchronization limits are recorded in the PHASE 4 document.
 
 Production deployment requires a separate read-only server audit and the user's confirmation before writes. The production URL, HTTPS verification, release signing, and APK installation are not implied by a passing local Docker or Debug build.

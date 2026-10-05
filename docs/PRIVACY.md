@@ -4,7 +4,9 @@ Xichu Finance is a personal bookkeeping application. It stores user-defined acco
 
 ## Current local application
 
-The Android local MVP stores accounts, categories, and transactions in Room on the device. Bundled demo data and repository screenshots are fictional. The current Android app does not upload this data because remote API integration is not implemented yet. The Room database is currently unencrypted; anyone with access to the application's local data could read it.
+Android stores accounts, categories, and transactions in Room on the device. Bundled demo data and repository screenshots are fictional. The local ledger is never uploaded automatically. Choosing cloud login/register enables server storage and synchronization for that separate user ledger; the login screen explains this choice. Room databases are unencrypted; anyone with access to the application's private files could read them.
+
+The session, including email/token, is encrypted before persistence and is removed on logout. Passwords are not stored by the app. Logout hides the user's cache but retains its database for later login to the same user. Backups are disabled.
 
 ## Backend
 
@@ -14,6 +16,6 @@ The HTTP validation script creates fictional users at `example.com`. It cleans u
 
 ## Features still being developed
 
-Cloud synchronization, CSV import, and optional AI providers will need additional data handling documentation when implemented. There is currently no automatic AI provider call. Any future AI enhancement must be optional and use Backend-only credentials; the app will call its own Backend.
+CSV import and optional AI providers will need additional data handling documentation when implemented. There is currently no automatic AI provider call. Any future AI enhancement must be optional and use Backend-only credentials; the app will call its own Backend.
 
 User/account deletion, export, server retention, and production backup/restore behavior are not yet a complete privacy workflow. A deployed service must document those behaviors before being presented as ready for real users. No production data has been created or altered during the current local phases.

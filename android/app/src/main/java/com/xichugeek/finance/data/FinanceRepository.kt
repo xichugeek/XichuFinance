@@ -2,16 +2,38 @@ package com.xichugeek.finance.data
 
 import androidx.room.withTransaction
 import java.time.LocalDate
+import java.time.Instant
 import java.time.ZoneId
+import java.math.BigDecimal
 
-class FinanceRepository(private val database: FinanceDatabase) {
+class FinanceRepository(
+    private val database: FinanceDatabase,
+    private val api: FinanceApi? = null,
+    private val session: UserSession? = null,
+) {
     private val dao = database.dao()
+    private val authorization: String get() = checkNotNull(session).authorization
 
     val accounts = dao.observeAccounts()
     val categories = dao.observeCategories()
     val transactions = dao.observeTransactions()
 
+    suspend fun refresh() {
+        val remote = api ?: return
+        val userId = checkNotNull(session).id
+        check(remote.me(authorization).id == userId) { "登录用户不匹配，请重新登录" }
+        // Fetch and validate the complete response before replacing any cached records.
+        val accounts = remote.accounts(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
+        val categories = remote.categories(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
+        val transactions = remote.transactions(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
+        database.withTransaction {
+            dao.clearTransactions(); dao.clearCategories(); dao.clearAccounts()
+            dao.insertAccounts(accounts); dao.insertCategories(categories); dao.insertTransactions(transactions)
+        }
+    }
+
     suspend fun seedIfEmpty() = database.withTransaction {
+        check(api == null) { "云端用户不能插入本地示例" }
         if (dao.accountCount() != 0) return@withTransaction
 
         dao.insertAccount(AccountEntity(name = "现金", kind = "cash", openingBalanceMinor = 30000))
@@ -57,20 +79,49 @@ class FinanceRepository(private val database: FinanceDatabase) {
 
     suspend fun addAccount(name: String, kind: String) {
         require(name.isNotBlank()) { "请输入账户名称" }
-        dao.insertAccount(AccountEntity(name = name.trim(), kind = kind))
+        if (api == null) dao.insertAccount(AccountEntity(name = name.trim(), kind = kind))
+        else dao.cacheAccount(api.addAccount(authorization, AccountRequest(name.trim(), kind)).also {
+            check(it.userId == session?.id)
+        }.entity())
+    }
+
+    suspend fun updateAccount(account: AccountEntity) {
+        require(account.name.isNotBlank()) { "请输入账户名称" }
+        if (api == null) check(dao.updateAccount(account.id, account.name.trim(), account.kind, account.openingBalanceMinor) == 1)
+        else dao.cacheAccount(api.updateAccount(authorization, account.id, AccountRequest(
+            account.name.trim(), account.kind, BigDecimal.valueOf(account.openingBalanceMinor, 2).toPlainString(),
+        )).also { check(it.userId == session?.id) }.entity())
+    }
+
+    suspend fun deleteAccount(id: Long) {
+        api?.deleteAccount(authorization, id)
+        check(dao.deleteAccount(id) == 1) { "账户不存在" }
     }
 
     suspend fun addCategory(name: String, type: String) {
         require(name.isNotBlank()) { "请输入分类名称" }
         require(type == "income" || type == "expense")
-        dao.insertCategory(CategoryEntity(name = name.trim(), type = type))
+        if (api == null) dao.insertCategory(CategoryEntity(name = name.trim(), type = type))
+        else dao.cacheCategory(api.addCategory(authorization, CategoryRequest(name.trim(), type))
+            .also { check(it.userId == session?.id) }.entity())
     }
 
     suspend fun saveTransaction(transaction: TransactionEntity) {
         require(transaction.amountMinor > 0) { "金额必须大于 0" }
         require(transaction.description.isNotBlank()) { "请输入描述" }
         require(transaction.type == "income" || transaction.type == "expense")
-        if (transaction.id == 0L) {
+        if (api != null) {
+            val request = TransactionRequest(
+                accountId = transaction.accountId, categoryId = transaction.categoryId, type = transaction.type,
+                amount = BigDecimal.valueOf(transaction.amountMinor, 2).toPlainString(),
+                description = transaction.description.trim(),
+                transactionDate = LocalDate.ofInstant(Instant.ofEpochMilli(transaction.transactionDate), ZoneId.systemDefault()).toString(),
+            )
+            val result = if (transaction.id == 0L) api.addTransaction(authorization, request)
+            else api.updateTransaction(authorization, transaction.id, request)
+            check(result.userId == session?.id)
+            dao.cacheTransaction(result.entity())
+        } else if (transaction.id == 0L) {
             dao.insertTransaction(transaction)
         } else {
             check(dao.updateTransaction(
@@ -87,6 +138,7 @@ class FinanceRepository(private val database: FinanceDatabase) {
     }
 
     suspend fun deleteTransaction(id: Long) {
+        api?.deleteTransaction(authorization, id)
         check(dao.deleteTransaction(id) == 1) { "交易不存在" }
     }
 }

@@ -35,11 +35,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,6 +53,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
@@ -87,7 +91,45 @@ private val financeColors = lightColorScheme(
 )
 
 @Composable
-private fun FinanceApp(model: FinanceViewModel) {
+internal fun FinanceApp(model: FinanceViewModel) {
+    val state by model.state.collectAsState()
+    val error by model.error.collectAsState()
+    MaterialTheme(colorScheme = financeColors) {
+        when {
+            state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("Xichu Finance", style = MaterialTheme.typography.headlineMedium)
+                    CircularProgressIndicator()
+                }
+            }
+            !state.hasLedger -> AuthScreen(state, error, model)
+            else -> key(state.localMode, state.userId) { FinanceLedger(model) }
+        }
+    }
+}
+
+@Composable
+private fun AuthScreen(state: FinanceUiState, error: String?, model: FinanceViewModel) {
+    var register by rememberSaveable { mutableStateOf(false) }
+    var email by rememberSaveable { mutableStateOf("") }
+    // Passwords stay in memory only and are not retained in saved instance state.
+    var password by remember { mutableStateOf("") }
+    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Spacer(Modifier.height(32.dp)); Text("Xichu Finance", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold) }
+        item { Text("让每一笔收支清楚可见", color = MaterialTheme.colorScheme.secondary) }
+        item { Text(if (register) "创建云端账户" else "登录云端账本", style = MaterialTheme.typography.titleLarge) }
+        item { OutlinedTextField(email, { email = it }, label = { Text("邮箱") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(password, { password = it }, label = { Text("密码（8–128 个字符）") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth()) }
+        error?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
+        item { Button(onClick = { model.authenticate(email, password, register) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (state.busy) "正在连接…" else if (register) "注册并登录" else "登录") } }
+        item { TextButton(onClick = { register = !register; model.clearError() }, enabled = !state.busy) { Text(if (register) "已有账户，去登录" else "还没有账户？注册") } }
+        item { OutlinedButton(onClick = { model.useLocalMode() }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text("打开本地账本") } }
+        item { Text("云端账本会将收支保存到服务器。本地账本仅保存在此设备，首次打开含虚构示例。请勿输入银行卡号或支付密码。", style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+private fun FinanceLedger(model: FinanceViewModel) {
     val state by model.state.collectAsState()
     val error by model.error.collectAsState()
     val nav = rememberNavController()
@@ -109,17 +151,20 @@ private fun FinanceApp(model: FinanceViewModel) {
                 ) {
                     Text("Xichu Finance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.weight(1f))
-                    Text("本地账本", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    TextButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) {
+                        Text(if (state.localMode) "本地 · 设置" else "云端 · 设置")
+                    }
                 }
             },
             bottomBar = {
-                if (route in listOf("home", "transactions", "accounts", "categories")) {
+                if (route in listOf("home", "transactions", "accounts", "categories", "settings")) {
                     NavigationBar {
                         listOf(
                             "home" to "概览",
                             "transactions" to "交易",
                             "accounts" to "账户",
                             "categories" to "分类",
+                            "settings" to "设置",
                         ).forEach { (destination, label) ->
                             NavigationBarItem(
                                 selected = route == destination,
@@ -144,6 +189,7 @@ private fun FinanceApp(model: FinanceViewModel) {
                 }
                 composable("accounts") { AccountsScreen(state, model) }
                 composable("categories") { CategoriesScreen(state, model) }
+                composable("settings") { SettingsScreen(state, model) }
             }
         }
     }
@@ -167,6 +213,7 @@ private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
             Column {
                 Text("你好，今天也清楚掌握每一笔", style = MaterialTheme.typography.titleMedium)
                 Text("${month.year} 年 ${month.monthValue} 月", color = MaterialTheme.colorScheme.secondary)
+                Text(state.syncStatus, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             }
         }
         item { SummaryCard("账户总余额", Money.formatMinor(totalBalance), emphasized = true) }
@@ -265,9 +312,9 @@ private fun TransactionDetail(state: FinanceUiState, model: FinanceViewModel, na
         Text("日期：${LocalDate.ofInstant(Instant.ofEpochMilli(item.transactionDate), ZoneId.systemDefault())}")
         Text("账户：$account")
         Text("分类：$category")
-        Text("来源：${if (item.source == "demo") "虚构示例" else "手动录入"}")
+        Text("来源：${when (item.source) { "demo" -> "虚构示例"; "csv" -> "CSV 导入"; else -> "手动录入" }}")
         Button(onClick = { nav.navigate("transaction/edit/${item.id}") }, modifier = Modifier.fillMaxWidth()) { Text("编辑") }
-        OutlinedButton(onClick = { model.deleteTransaction(item.id) { nav.popBackStack() } }, modifier = Modifier.fillMaxWidth()) { Text("删除交易") }
+        OutlinedButton(onClick = { model.deleteTransaction(item.id) { nav.popBackStack() } }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text("删除交易") }
         OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.fillMaxWidth()) { Text("返回") }
     }
 }
@@ -336,6 +383,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
                         model.showError(e.message ?: "请检查输入")
                     }
                 },
+                enabled = !state.busy,
                 modifier = Modifier.fillMaxWidth(),
             ) { Text("保存交易") }
         }
@@ -362,16 +410,30 @@ private fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) ->
 private fun AccountsScreen(state: FinanceUiState, model: FinanceViewModel) {
     var name by rememberSaveable { mutableStateOf("") }
     var kind by rememberSaveable { mutableStateOf("cash") }
+    var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     val kinds = listOf("cash" to "现金", "bank" to "银行卡", "credit" to "信用卡", "alipay" to "支付宝", "wechat" to "微信", "other" to "其他")
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { Text("我的账户", style = MaterialTheme.typography.headlineSmall) }
         items(state.accounts, key = { it.id }) { account ->
-            SummaryCard(account.name, Money.formatMinor(FinanceMath.accountBalance(account, state.transactions)))
+            Column {
+                SummaryCard(account.name, Money.formatMinor(FinanceMath.accountBalance(account, state.transactions)))
+                Row {
+                    TextButton(onClick = { editingId = account.id; name = account.name; kind = account.kind }, enabled = !state.busy) { Text("编辑账户") }
+                    TextButton(onClick = { model.deleteAccount(account.id) }, enabled = !state.busy && state.transactions.none { it.accountId == account.id }) { Text("删除空账户") }
+                }
+            }
         }
-        item { Spacer(Modifier.height(8.dp)); Text("添加账户", style = MaterialTheme.typography.titleMedium) }
+        item { Spacer(Modifier.height(8.dp)); Text(if (editingId == null) "添加账户" else "编辑账户", style = MaterialTheme.typography.titleMedium) }
         item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("自定义账户名称") }, modifier = Modifier.fillMaxWidth()) }
         item { Picker("类型", kinds, kinds.indexOfFirst { it.first == kind }.toLong(), { kinds.indexOf(it).toLong() }, { it.second }) { kind = kinds[it.toInt()].first } }
-        item { Button(onClick = { model.addAccount(name, kind) { name = "" } }, modifier = Modifier.fillMaxWidth()) { Text("添加账户") } }
+        item {
+            Button(onClick = {
+                val current = state.accounts.firstOrNull { it.id == editingId }
+                if (current == null) model.addAccount(name, kind) { name = ""; editingId = null }
+                else model.updateAccount(current.copy(name = name, kind = kind)) { name = ""; editingId = null }
+            }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (editingId == null) "添加账户" else "保存账户") }
+            if (editingId != null) TextButton(onClick = { editingId = null; name = "" }) { Text("取消编辑") }
+        }
     }
 }
 
@@ -392,7 +454,23 @@ private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
         }
         item { Spacer(Modifier.height(8.dp)); Text("添加分类", style = MaterialTheme.typography.titleMedium) }
         item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("分类名称") }, modifier = Modifier.fillMaxWidth()) }
-        item { Button(onClick = { model.addCategory(name, type) { name = "" } }, modifier = Modifier.fillMaxWidth()) { Text("添加分类") } }
+        item { Button(onClick = { model.addCategory(name, type) { name = "" } }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text("添加分类") } }
+    }
+}
+
+@Composable
+private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel) {
+    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { Text("设置", style = MaterialTheme.typography.headlineSmall) }
+        item { Text(if (state.localMode) "本地账本" else state.email, style = MaterialTheme.typography.titleMedium) }
+        item { Text(state.syncStatus) }
+        if (!state.localMode) {
+            item { Button(onClick = { model.refresh() }, enabled = !state.busy && !state.loginExpired, modifier = Modifier.fillMaxWidth()) { Text(if (state.busy) "正在同步…" else "刷新云端账本") } }
+            item { Text("云端修改需要联网。离线时可查看已同步数据；恢复联网后点击刷新。", style = MaterialTheme.typography.bodyMedium) }
+        }
+        item { OutlinedButton(onClick = { model.logout() }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (state.localMode) "返回登录页" else if (state.loginExpired) "重新登录" else "退出登录") } }
+        item { Text("退出后，此设备的缓存会保留，但只有重新登录同一用户才可打开。设备锁屏保护本地数据；Room 缓存目前未加密。", style = MaterialTheme.typography.bodySmall) }
+        item { Text(if (BuildConfig.DEBUG) "开发环境：${BuildConfig.API_BASE_URL}" else "服务：${BuildConfig.API_BASE_URL}", style = MaterialTheme.typography.bodySmall) }
     }
 }
 

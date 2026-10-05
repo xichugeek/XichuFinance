@@ -37,4 +37,4 @@ If Docker Hub and PyPI are unreachable, create the first `.env` using `python sc
 
 The HTTP validation script uses only loopback addresses and fictional users. It deletes its transactions and account afterward. Two test users and their categories remain in the local database because user/category deletion is not part of the current API. It does not print passwords or tokens. CSV import and later-phase features are outside this script's checks.
 
-The API has not been connected to Android, and CSV import and AI endpoints have not yet been implemented. Their later phase gates remain open.
+Android local integration subsequently passed [PHASE 4](ANDROID_BACKEND_PHASE_4.md). CSV import and AI endpoints remain later phase gates.
