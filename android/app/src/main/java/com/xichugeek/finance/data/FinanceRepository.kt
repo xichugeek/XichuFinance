@@ -23,6 +23,11 @@ class FinanceRepository(
     val categories = dao.observeCategories()
     val transactions = dao.observeTransactions()
     val rules = dao.observeRules()
+    suspend fun ask(question: String, month: String): AskResult {
+        require(api != null) { "问问账单需要登录云端账本" }
+        require(question.isNotBlank() && question.length <= 300) { "问题长度应为 1–300 个字符" }
+        return api.ask(authorization, AskRequest(question.trim(), month))
+    }
 
     suspend fun classify(description: String, type: String): ClassificationResult {
         require(description.isNotBlank()) { "请先填写交易描述" }

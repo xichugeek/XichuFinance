@@ -136,6 +136,7 @@ data class RemoteTransaction(
 }
 
 interface FinanceApi {
+    @POST("ai/ask") suspend fun ask(@Header("Authorization") authorization: String, @Body request: AskRequest): AskResult
     @GET("rules") suspend fun rules(@Header("Authorization") authorization: String): List<RemoteRule>
     @POST("rules") suspend fun addRule(@Header("Authorization") authorization: String, @Body request: RuleRequest): RemoteRule
     @PUT("rules/{id}") suspend fun updateRule(@Header("Authorization") authorization: String, @Path("id") id: Long, @Body request: RuleRequest): RemoteRule

@@ -19,6 +19,7 @@ import com.xichugeek.finance.data.StandardCsvParser
 import com.xichugeek.finance.data.RuleEntity
 import com.xichugeek.finance.data.KeywordRule
 import com.xichugeek.finance.data.ClassificationResult
+import com.xichugeek.finance.data.AskResult
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,6 +49,7 @@ data class FinanceUiState(
     val loginExpired: Boolean = false,
     val csvPreview: CsvPreview? = null,
     val csvResult: CsvCommitResult? = null,
+    val askResult: AskResult? = null,
 ) {
     val hasLedger: Boolean get() = localMode || userId != null
 }
@@ -191,6 +193,11 @@ class FinanceViewModel @JvmOverloads constructor(
         runAction { onResult(checkNotNull(repository).classify(description, type)) }
     fun saveRule(rule: RuleEntity, onSuccess: () -> Unit = {}) = runAction(onSuccess) { checkNotNull(repository).saveRule(rule) }
     fun deleteRule(id: Long) = runAction { checkNotNull(repository).deleteRule(id) }
+    fun ask(question: String, month: String) = runAction {
+        _state.update { it.copy(askResult = null) }
+        val result = checkNotNull(repository).ask(question, month)
+        _state.update { it.copy(askResult = result) }
+    }
     fun updateAccount(account: AccountEntity, onSuccess: () -> Unit = {}) =
         runAction(onSuccess) { checkNotNull(repository).updateAccount(account) }
     fun deleteAccount(id: Long) = runAction { checkNotNull(repository).deleteAccount(id) }

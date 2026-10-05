@@ -12,6 +12,7 @@ Last checked: 2026-10-06 (Asia/Shanghai)
 | PHASE 5 — CSV Import | PASS locally | [Backend/PostgreSQL, parser and Compose preview/confirm/duplicate evidence](CSV_PHASE_5.md). |
 | PHASE 6 — Analytics | PASS locally | [Exact money, SQL aggregates, month switching and emulator charts](ANALYTICS_PHASE_6.md). |
 | PHASE 7 — Smart Classification | PASS locally | [Rules, shared keywords, disabled AI fallback and real device test](CLASSIFICATION_PHASE_7.md). |
-| PHASE 8–11 | NOT STARTED | Respect phase order and separate production safety gates. |
+| PHASE 8 — Ask Finance | PASS locally | [Owned database queries, seven intents, disabled AI templates and device test](ASK_PHASE_8.md). |
+| PHASE 9–11 | NOT STARTED | Respect phase order and separate production safety gates. |
 
 No production server, DNS, signing key, or real financial data has been changed.

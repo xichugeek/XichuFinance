@@ -194,6 +194,7 @@ private fun FinanceLedger(model: FinanceViewModel) {
                 composable("import") { ImportScreen(state, model) { nav.popBackStack() } }
                 composable("analytics") { AnalyticsScreen(state, { nav.navigate("transaction/$it") }) { nav.popBackStack() } }
                 composable("rules") { RulesScreen(state, model) { nav.popBackStack() } }
+                composable("ask") { AskScreen(state, model) { nav.popBackStack() } }
             }
         }
     }
@@ -247,6 +248,7 @@ private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
         item { Button(onClick = { nav.navigate("transaction/new") }, modifier = Modifier.fillMaxWidth()) { Text("添加一笔交易") } }
         item { OutlinedButton(onClick = { nav.navigate("import") }, modifier = Modifier.fillMaxWidth()) { Text("CSV 账单导入") } }
         item { OutlinedButton(onClick = { nav.navigate("analytics") }, modifier = Modifier.fillMaxWidth()) { Text("统计分析") } }
+        item { OutlinedButton(onClick = { nav.navigate("ask") }, modifier = Modifier.fillMaxWidth()) { Text("问问我的账单") } }
         item { DailyTrendChart(analysis) }
         item { CategoryChart(analysis) }
     }

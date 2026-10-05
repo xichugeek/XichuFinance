@@ -150,11 +150,18 @@ def validate(base_url: str) -> None:
         assert Decimal(after_summary["expense"]) - Decimal(before_summary["expense"]) == Decimal("19.00")
         assert Decimal(after_summary["income"]) - Decimal(before_summary["income"]) == Decimal("6000.00")
         print("PASS: CSV preview without writes, commit/replay/deduplication, user isolation, decimal analytics")
+        answer = call("POST", "/ai/ask", token_a, {"question": "这个月花了多少钱？", "month": today})
+        assert answer["data"]["amount"] == after_summary["expense"] and answer["source"] == "database_template"
+        assert answer["ai_enabled"] is False
+        assert call("POST", "/ai/ask", token_b, {"question": "本月支出多少？", "month": today})["data"]["amount"] == "0.00"
+        assert call("POST", "/ai/ask", token_a, {"question": "这个月钱主要花在哪？", "month": today})["intent"] == "category_ranking"
+        assert call("POST", "/ai/ask", token_a, {"question": "本月最大的五笔支出是什么？", "month": today})["intent"] == "largest_expenses"
+        print("PASS: database/template Ask Finance and cross-user isolation with AI disabled")
     finally:
         for row in call("GET", "/transactions", token_a):
             call("DELETE", f"/transactions/{row['id']}", token_a, expected=204)
         call("DELETE", f"/accounts/{account_id}", token_a, expected=204)
-    print("BACKEND_LOCAL = PASS (core API/PostgreSQL and CSV; AI and production remain later gates)")
+    print("BACKEND_LOCAL = PASS (API/PostgreSQL, CSV, analytics, classification and Ask; production remains a separate gate)")
 
 
 if __name__ == "__main__":
