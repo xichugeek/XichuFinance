@@ -13,6 +13,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
@@ -65,8 +67,23 @@ data class TransactionEntity(
     val updatedAt: Long = System.currentTimeMillis(),
 )
 
+@Entity(tableName = "classification_rules",
+    foreignKeys = [ForeignKey(entity = CategoryEntity::class, parentColumns = ["id"], childColumns = ["categoryId"], onDelete = ForeignKey.RESTRICT)],
+    indices = [Index("categoryId"), Index(value = ["type", "keyword"], unique = true)])
+data class RuleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val keyword: String, val categoryId: Long, val type: String,
+    val priority: Int = 100, val enabled: Boolean = true,
+)
+
 @Dao
 interface FinanceDao {
+    @Query("SELECT * FROM classification_rules ORDER BY priority, id") fun observeRules(): Flow<List<RuleEntity>>
+    @Upsert suspend fun cacheRule(item: RuleEntity)
+    @Insert suspend fun insertRule(item: RuleEntity): Long
+    @Insert suspend fun insertRules(items: List<RuleEntity>)
+    @Query("DELETE FROM classification_rules WHERE id = :id") suspend fun deleteRule(id: Long): Int
+    @Query("DELETE FROM classification_rules") suspend fun clearRules()
     @Query("SELECT * FROM accounts ORDER BY id")
     fun observeAccounts(): Flow<List<AccountEntity>>
 
@@ -119,14 +136,21 @@ interface FinanceDao {
 }
 
 @Database(
-    entities = [AccountEntity::class, CategoryEntity::class, TransactionEntity::class],
-    version = 1,
+    entities = [AccountEntity::class, CategoryEntity::class, TransactionEntity::class, RuleEntity::class],
+    version = 2,
     exportSchema = true,
 )
 abstract class FinanceDatabase : RoomDatabase() {
     abstract fun dao(): FinanceDao
 
     companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS classification_rules (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, keyword TEXT NOT NULL, categoryId INTEGER NOT NULL, type TEXT NOT NULL, priority INTEGER NOT NULL, enabled INTEGER NOT NULL, FOREIGN KEY(categoryId) REFERENCES categories(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_classification_rules_categoryId ON classification_rules (categoryId)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_classification_rules_type_keyword ON classification_rules (type, keyword)")
+            }
+        }
         @Volatile private var instance: FinanceDatabase? = null
         private val userInstances = ConcurrentHashMap<String, FinanceDatabase>()
 
@@ -136,7 +160,7 @@ abstract class FinanceDatabase : RoomDatabase() {
                 .take(8).joinToString("") { "%02x".format(it) }
             val name = "cloud_${serverHash}_user_$userId.db"
             return userInstances.getOrPut(name) {
-                Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, name).build()
+                Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, name).addMigrations(MIGRATION_1_2).build()
             }
         }
 
@@ -145,7 +169,7 @@ abstract class FinanceDatabase : RoomDatabase() {
                 context.applicationContext,
                 FinanceDatabase::class.java,
                 "xichu_finance.db",
-            ).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
         }
     }
 }

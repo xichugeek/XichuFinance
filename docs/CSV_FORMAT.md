@@ -13,7 +13,7 @@ This is the only formally supported v1.0 import format. Raw WeChat, Alipay, and 
 - `amount`: positive CNY decimal, at most two fractional digits. No currency signs or thousands separators; income/expense direction comes from `type`.
 - `type`: `income` or `expense`.
 - `account`: exact name of an account already created by the logged-in user. Only a custom label is needed, never a card number.
-- `category`: optional existing category with matching type. Without it, this phase uses that type's `其他` category.
+- `category`: optional existing category with matching type. Without it, user rules and built-in keywords select a category, with `其他` as the fallback. A supplied category takes precedence.
 
 ```csv
 date,description,amount,type,account

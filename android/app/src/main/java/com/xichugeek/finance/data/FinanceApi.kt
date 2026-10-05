@@ -136,6 +136,11 @@ data class RemoteTransaction(
 }
 
 interface FinanceApi {
+    @GET("rules") suspend fun rules(@Header("Authorization") authorization: String): List<RemoteRule>
+    @POST("rules") suspend fun addRule(@Header("Authorization") authorization: String, @Body request: RuleRequest): RemoteRule
+    @PUT("rules/{id}") suspend fun updateRule(@Header("Authorization") authorization: String, @Path("id") id: Long, @Body request: RuleRequest): RemoteRule
+    @DELETE("rules/{id}") suspend fun deleteRule(@Header("Authorization") authorization: String, @Path("id") id: Long)
+    @POST("ai/classify") suspend fun classify(@Header("Authorization") authorization: String, @Body request: ClassifyRequest): ClassificationResult
     @POST("auth/register") suspend fun register(@Body credentials: Credentials): RemoteUser
     @POST("auth/login") suspend fun login(@Body credentials: Credentials): TokenResponse
     @GET("me") suspend fun me(@Header("Authorization") authorization: String): RemoteUser

@@ -20,6 +20,7 @@ from app.auth import current_user, token_secret
 from app.db import get_db
 from app.models import Account, Category, Transaction, User
 from app.schemas import TransactionIn
+from app.classification import classify, get_provider, load_rules
 
 
 router = APIRouter(prefix="/imports/csv", tags=["CSV import"])
@@ -58,6 +59,7 @@ def preview(data: bytes, db: Session, user_id: int) -> dict:
 
     accounts = {row.name: row for row in db.scalars(select(Account).where(Account.user_id == user_id))}
     categories = {(row.name, row.type): row for row in db.scalars(select(Category).where(Category.user_id == user_id))}
+    rules = load_rules(db, user_id)
     existing = set(db.scalars(select(Transaction.external_id).where(
         Transaction.user_id == user_id, Transaction.source == "csv", Transaction.external_id.is_not(None),
     )))
@@ -84,7 +86,9 @@ def preview(data: bytes, db: Session, user_id: int) -> dict:
             if account is None:
                 row["message"] = "账户不存在，请先在账户页创建同名账户"
                 continue
-            category_name = values.get("category") or "其他"
+            category_name = values.get("category")
+            if not category_name and values["type"] in ("income", "expense"):
+                category_name = classify(values["description"], values["type"], list(categories.values()), rules, get_provider())["category"]
             category = categories.get((category_name, values["type"]))
             if category is None:
                 row["message"] = "分类不存在，或收入/支出类型不匹配"

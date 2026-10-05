@@ -23,6 +23,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://xichu:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/xichu_finance
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      AI_ENABLED: "false"
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:

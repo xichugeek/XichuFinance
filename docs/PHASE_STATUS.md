@@ -11,6 +11,7 @@ Last checked: 2026-10-06 (Asia/Shanghai)
 | PHASE 4 — Android ↔ Backend | PASS for local Debug integration | [3 passing device tests, unit tests, ADB install, and offline UI screenshot](ANDROID_BACKEND_PHASE_4.md). Production integration remains PHASE 10–11. |
 | PHASE 5 — CSV Import | PASS locally | [Backend/PostgreSQL, parser and Compose preview/confirm/duplicate evidence](CSV_PHASE_5.md). |
 | PHASE 6 — Analytics | PASS locally | [Exact money, SQL aggregates, month switching and emulator charts](ANALYTICS_PHASE_6.md). |
-| PHASE 7–11 | NOT STARTED | Respect phase order and separate production safety gates. |
+| PHASE 7 — Smart Classification | PASS locally | [Rules, shared keywords, disabled AI fallback and real device test](CLASSIFICATION_PHASE_7.md). |
+| PHASE 8–11 | NOT STARTED | Respect phase order and separate production safety gates. |
 
 No production server, DNS, signing key, or real financial data has been changed.

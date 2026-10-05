@@ -1,6 +1,7 @@
 package com.xichugeek.finance.data
 
 import androidx.room.withTransaction
+import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.Instant
 import java.time.ZoneId
@@ -13,6 +14,7 @@ class FinanceRepository(
     private val database: FinanceDatabase,
     private val api: FinanceApi? = null,
     private val session: UserSession? = null,
+    private val keywords: List<KeywordRule> = emptyList(),
 ) {
     private val dao = database.dao()
     private val authorization: String get() = checkNotNull(session).authorization
@@ -20,6 +22,33 @@ class FinanceRepository(
     val accounts = dao.observeAccounts()
     val categories = dao.observeCategories()
     val transactions = dao.observeTransactions()
+    val rules = dao.observeRules()
+
+    suspend fun classify(description: String, type: String): ClassificationResult {
+        require(description.isNotBlank()) { "请先填写交易描述" }
+        return if (api == null) LocalClassifier.classify(description, type, categories.first(), rules.first(), keywords)
+        else api.classify(authorization, ClassifyRequest(description, type))
+    }
+
+    suspend fun saveRule(rule: RuleEntity) {
+        require(rule.keyword.isNotBlank() && rule.keyword.trim().length <= 100) { "关键词长度应为 1–100 个字符" }
+        require(rule.priority in 0..1000) { "优先级应为 0–1000，越小越先匹配" }
+        require(categories.first().any { it.id == rule.categoryId && it.type == rule.type }) { "请选择对应类型的分类" }
+        val normalized = rule.copy(keyword = rule.keyword.trim().lowercase(java.util.Locale.ROOT))
+        if (api == null) {
+            if (rule.id == 0L) dao.insertRule(normalized) else dao.cacheRule(normalized)
+        } else {
+            val request = RuleRequest(normalized.keyword, rule.categoryId, rule.type, rule.priority, rule.enabled)
+            val remote = if (rule.id == 0L) api.addRule(authorization, request) else api.updateRule(authorization, rule.id, request)
+            check(remote.userId == session?.id)
+            dao.cacheRule(remote.entity())
+        }
+    }
+
+    suspend fun deleteRule(id: Long) {
+        api?.deleteRule(authorization, id)
+        check(dao.deleteRule(id) == 1) { "规则不存在" }
+    }
 
     suspend fun previewCsv(bytes: ByteArray): CsvPreview {
         require(api != null) { "CSV 导入需要登录云端账本" }
@@ -41,9 +70,11 @@ class FinanceRepository(
         val accounts = remote.accounts(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
         val categories = remote.categories(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
         val transactions = remote.transactions(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
+        val rules = remote.rules(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
         database.withTransaction {
-            dao.clearTransactions(); dao.clearCategories(); dao.clearAccounts()
+            dao.clearTransactions(); dao.clearRules(); dao.clearCategories(); dao.clearAccounts()
             dao.insertAccounts(accounts); dao.insertCategories(categories); dao.insertTransactions(transactions)
+            dao.insertRules(rules)
         }
     }
 

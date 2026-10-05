@@ -16,6 +16,9 @@ import com.xichugeek.finance.data.UserSession
 import com.xichugeek.finance.data.CsvPreview
 import com.xichugeek.finance.data.CsvCommitResult
 import com.xichugeek.finance.data.StandardCsvParser
+import com.xichugeek.finance.data.RuleEntity
+import com.xichugeek.finance.data.KeywordRule
+import com.xichugeek.finance.data.ClassificationResult
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -35,6 +38,7 @@ data class FinanceUiState(
     val accounts: List<AccountEntity> = emptyList(),
     val categories: List<CategoryEntity> = emptyList(),
     val transactions: List<TransactionEntity> = emptyList(),
+    val rules: List<RuleEntity> = emptyList(),
     val loading: Boolean = true,
     val busy: Boolean = false,
     val localMode: Boolean = false,
@@ -119,12 +123,18 @@ class FinanceViewModel @JvmOverloads constructor(
             syncStatus = if (session == null) "本地账本，仅保存在此设备" else "正在同步；缓存可查看")
         val database = if (session == null) FinanceDatabase.get(getApplication())
         else FinanceDatabase.forUser(getApplication(), BuildConfig.API_BASE_URL, session.id)
-        val activeRepository = FinanceRepository(database, if (session == null) null else api, session)
+        val keywords = withContext(Dispatchers.IO) {
+            getApplication<Application>().assets.open("classification_keywords.json").bufferedReader().use {
+                ApiClient.json.decodeFromString<List<KeywordRule>>(it.readText())
+            }
+        }
+        val activeRepository = FinanceRepository(database, if (session == null) null else api, session, keywords)
         repository = activeRepository
         if (session == null) activeRepository.seedIfEmpty()
         collection = viewModelScope.launch {
-            combine(activeRepository.accounts, activeRepository.categories, activeRepository.transactions) { a, c, t -> Triple(a, c, t) }
-                .collect { (a, c, t) -> _state.update { it.copy(accounts = a, categories = c, transactions = t) } }
+            combine(activeRepository.accounts, activeRepository.categories, activeRepository.transactions, activeRepository.rules) { a, c, t, r ->
+                FinanceUiState(accounts = a, categories = c, transactions = t, rules = r)
+            }.collect { cache -> _state.update { it.copy(accounts = cache.accounts, categories = cache.categories, transactions = cache.transactions, rules = cache.rules) } }
         }
     }
 
@@ -177,6 +187,10 @@ class FinanceViewModel @JvmOverloads constructor(
     }
     fun addAccount(name: String, kind: String, onSuccess: () -> Unit = {}) =
         runAction(onSuccess) { checkNotNull(repository).addAccount(name, kind) }
+    fun classify(description: String, type: String, onResult: (ClassificationResult) -> Unit) =
+        runAction { onResult(checkNotNull(repository).classify(description, type)) }
+    fun saveRule(rule: RuleEntity, onSuccess: () -> Unit = {}) = runAction(onSuccess) { checkNotNull(repository).saveRule(rule) }
+    fun deleteRule(id: Long) = runAction { checkNotNull(repository).deleteRule(id) }
     fun updateAccount(account: AccountEntity, onSuccess: () -> Unit = {}) =
         runAction(onSuccess) { checkNotNull(repository).updateAccount(account) }
     fun deleteAccount(id: Long) = runAction { checkNotNull(repository).deleteAccount(id) }

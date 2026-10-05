@@ -110,6 +110,20 @@ def validate(base_url: str) -> None:
         call("GET", f"/transactions/{tx_id}", token_a, expected=404)
         print("PASS: invalid money and transaction deletion")
 
+        entertainment = next(row["id"] for row in categories if row["name"] == "娱乐")
+        classification = {"description": "Fictional 咖啡", "type": "expense"}
+        assert call("GET", "/ai/status")["ai_status"] == "AI Enhancement Disabled"
+        assert call("POST", "/ai/classify", token_a, classification)["category"] == "餐饮"
+        rule_item = {"keyword": "咖啡", "type": "expense", "category_id": entertainment, "priority": 10}
+        rule = call("POST", "/rules", token_a, rule_item, 201)
+        assert call("POST", "/ai/classify", token_a, classification)["category"] == "娱乐"
+        assert call("GET", "/rules", token_b) == []
+        call("PUT", f"/rules/{rule['id']}", token_b, rule_item, 404)
+        call("DELETE", f"/rules/{rule['id']}", token_b, expected=404)
+        call("DELETE", f"/rules/{rule['id']}", token_a, expected=204)
+        assert call("POST", "/ai/classify", token_a, {"description": "unknown fictional merchant", "type": "expense"})["category"] == "其他"
+        print("PASS: user rules, shared keywords, AI-disabled fallback and rule isolation")
+
         csv = "date,description,amount,type,account,category\n" + "\n".join([
             f"{today},Fictional CSV breakfast,15.00,expense,Fictional renamed cash,餐饮",
             f"{today},Fictional CSV salary,6000.00,income,Fictional renamed cash,工资",

@@ -190,9 +190,10 @@ private fun FinanceLedger(model: FinanceViewModel) {
                 }
                 composable("accounts") { AccountsScreen(state, model) }
                 composable("categories") { CategoriesScreen(state, model) }
-                composable("settings") { SettingsScreen(state, model) }
+                composable("settings") { SettingsScreen(state, model) { nav.navigate("rules") } }
                 composable("import") { ImportScreen(state, model) { nav.popBackStack() } }
                 composable("analytics") { AnalyticsScreen(state, { nav.navigate("transaction/$it") }) { nav.popBackStack() } }
+                composable("rules") { RulesScreen(state, model) { nav.popBackStack() } }
             }
         }
     }
@@ -346,6 +347,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
             ?: state.categories.firstOrNull { it.type == type }?.id ?: 0L)
     }
     val categories = state.categories.filter { it.type == type }
+    var classificationMessage by remember { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -361,6 +363,19 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
         }
         item { OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("金额（元）") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("描述") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
+        item {
+            OutlinedButton(onClick = {
+                val input = description
+                val selectedType = type
+                model.classify(input, selectedType) { result ->
+                    if (description == input && type == selectedType) {
+                        categoryId = result.categoryId
+                        classificationMessage = "建议分类：${result.category} · ${when (result.source) { "rule" -> "自定义规则"; "keyword" -> "内置关键词"; "ai" -> "AI 建议"; else -> "默认分类" }}"
+                    }
+                }
+            }, enabled = !state.busy && description.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("自动分类") }
+            classificationMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        }
         item { OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("日期 YYYY-MM-DD") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
         item {
             Picker("账户", state.accounts, accountId, { it.id }, { it.name }) { accountId = it }
@@ -400,7 +415,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
 }
 
 @Composable
-private fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -> Long, title: (T) -> String, onSelected: (Long) -> Unit) {
+internal fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -> Long, title: (T) -> String, onSelected: (Long) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
@@ -467,11 +482,13 @@ private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
 }
 
 @Composable
-private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel) {
+private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel, onRules: () -> Unit) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { Text("设置", style = MaterialTheme.typography.headlineSmall) }
         item { Text(if (state.localMode) "本地账本" else state.email, style = MaterialTheme.typography.titleMedium) }
         item { Text(state.syncStatus) }
+        item { Text("AI Enhancement Disabled", style = MaterialTheme.typography.bodySmall) }
+        item { OutlinedButton(onClick = onRules, modifier = Modifier.fillMaxWidth()) { Text("自动分类规则") } }
         if (!state.localMode) {
             item { Button(onClick = { model.refresh() }, enabled = !state.busy && !state.loginExpired, modifier = Modifier.fillMaxWidth()) { Text(if (state.busy) "正在同步…" else "刷新云端账本") } }
             item { Text("云端修改需要联网。离线时可查看已同步数据；恢复联网后点击刷新。", style = MaterialTheme.typography.bodyMedium) }

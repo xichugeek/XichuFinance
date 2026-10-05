@@ -40,6 +40,8 @@ android {
         compose = true
         buildConfig = true
     }
+    // One keyword catalog is packaged by both the Backend and Android.
+    sourceSets.getByName("main").assets.srcDir("../../backend/app/data")
 }
 
 ksp {

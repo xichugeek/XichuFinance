@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -42,6 +42,19 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String(100))
     type: Mapped[str] = mapped_column(String(10))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ClassificationRule(Base):
+    __tablename__ = "classification_rules"
+    __table_args__ = (UniqueConstraint("user_id", "type", "keyword", name="uq_rule_user_type_keyword"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    category_id: Mapped[int] = mapped_column(ForeignKey("categories.id", ondelete="RESTRICT"), index=True)
+    type: Mapped[str] = mapped_column(String(10))
+    keyword: Mapped[str] = mapped_column(String(100))
+    priority: Mapped[int] = mapped_column(default=100)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class Transaction(Base):
