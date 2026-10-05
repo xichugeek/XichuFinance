@@ -65,6 +65,7 @@ import androidx.navigation.compose.rememberNavController
 import com.xichugeek.finance.data.AccountEntity
 import com.xichugeek.finance.data.CategoryEntity
 import com.xichugeek.finance.data.FinanceMath
+import com.xichugeek.finance.data.FinanceAnalytics
 import com.xichugeek.finance.data.Money
 import com.xichugeek.finance.data.TransactionEntity
 import java.math.BigDecimal
@@ -191,6 +192,7 @@ private fun FinanceLedger(model: FinanceViewModel) {
                 composable("categories") { CategoriesScreen(state, model) }
                 composable("settings") { SettingsScreen(state, model) }
                 composable("import") { ImportScreen(state, model) { nav.popBackStack() } }
+                composable("analytics") { AnalyticsScreen(state, { nav.navigate("transaction/$it") }) { nav.popBackStack() } }
             }
         }
     }
@@ -204,6 +206,7 @@ private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
     val summary = FinanceMath.summarize(current)
     val last = FinanceMath.summarize(previous)
     val totalBalance = state.accounts.sumOf { FinanceMath.accountBalance(it, state.transactions) }
+    val analysis = FinanceAnalytics.calculate(month, state.transactions, state.categories)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -227,7 +230,7 @@ private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
         item { SummaryCard("本月结余", Money.formatMinor(summary.balanceMinor)) }
         item {
             Text(
-                "上月支出 ${Money.formatMinor(last.expenseMinor)} · 本月${if (summary.expenseMinor >= last.expenseMinor) "增加" else "减少"} ${Money.formatMinor(kotlin.math.abs(summary.expenseMinor - last.expenseMinor))}",
+                "上月支出 ${Money.formatMinor(last.expenseMinor)} · 本月${if (summary.expenseMinor >= last.expenseMinor) "增加" else "减少"} ${Money.formatMinor((summary.expenseMinor - last.expenseMinor).abs())}",
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -242,11 +245,14 @@ private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
         }
         item { Button(onClick = { nav.navigate("transaction/new") }, modifier = Modifier.fillMaxWidth()) { Text("添加一笔交易") } }
         item { OutlinedButton(onClick = { nav.navigate("import") }, modifier = Modifier.fillMaxWidth()) { Text("CSV 账单导入") } }
+        item { OutlinedButton(onClick = { nav.navigate("analytics") }, modifier = Modifier.fillMaxWidth()) { Text("统计分析") } }
+        item { DailyTrendChart(analysis) }
+        item { CategoryChart(analysis) }
     }
 }
 
 @Composable
-private fun SummaryCard(label: String, value: String, emphasized: Boolean = false) {
+internal fun SummaryCard(label: String, value: String, emphasized: Boolean = false) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
         Column(Modifier.padding(18.dp)) {
             Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
@@ -282,7 +288,7 @@ private fun TransactionsScreen(state: FinanceUiState, nav: NavHostController) {
 }
 
 @Composable
-private fun TransactionRow(item: TransactionEntity, state: FinanceUiState, modifier: Modifier = Modifier) {
+internal fun TransactionRow(item: TransactionEntity, state: FinanceUiState, modifier: Modifier = Modifier) {
     val category = state.categories.firstOrNull { it.id == item.categoryId }?.name ?: "未分类"
     Card(Modifier.fillMaxWidth().then(modifier)) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {

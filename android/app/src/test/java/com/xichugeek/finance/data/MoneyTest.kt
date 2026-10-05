@@ -3,6 +3,7 @@ package com.xichugeek.finance.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.math.BigInteger
 
 class MoneyTest {
     @Test
@@ -28,9 +29,15 @@ class MoneyTest {
             TransactionEntity(accountId = 1, categoryId = 2, type = "expense", amountMinor = Money.parseMinor("0.2"), description = "b", transactionDate = 0),
         )
         val summary = FinanceMath.summarize(values)
-        assertEquals(100L, summary.incomeMinor)
-        assertEquals(30L, summary.expenseMinor)
-        assertEquals(70L, summary.balanceMinor)
-        assertEquals(70L, FinanceMath.accountBalance(AccountEntity(id = 1, name = "test", kind = "cash"), values))
+        assertEquals(BigInteger.valueOf(100), summary.incomeMinor)
+        assertEquals(BigInteger.valueOf(30), summary.expenseMinor)
+        assertEquals(BigInteger.valueOf(70), summary.balanceMinor)
+        assertEquals(BigInteger.valueOf(70), FinanceMath.accountBalance(AccountEntity(id = 1, name = "test", kind = "cash"), values))
+    }
+
+    @Test fun aggregateDoesNotOverflowLong() {
+        val amount = 999999999999999999L
+        val rows = List(20) { TransactionEntity(accountId = 1, categoryId = 1, type = "income", amountMinor = amount, description = "fictional large amount", transactionDate = 0) }
+        assertEquals(BigInteger.valueOf(amount) * BigInteger.valueOf(20), FinanceMath.summarize(rows).incomeMinor)
     }
 }

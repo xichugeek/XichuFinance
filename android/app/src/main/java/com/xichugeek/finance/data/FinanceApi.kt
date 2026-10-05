@@ -18,6 +18,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Multipart
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -100,6 +101,13 @@ data class CsvCommitRequest(@SerialName("preview_token") val token: String) {
 data class CsvCommitResult(val imported: Int, val duplicates: Int)
 
 @Serializable
+data class AnalyticsSummary(
+    val month: String, val income: String, val expense: String, val balance: String,
+    @SerialName("previous_month_expense") val previousExpense: String,
+    @SerialName("expense_change") val expenseChange: String,
+)
+
+@Serializable
 data class RemoteTransaction(
     val id: Long,
     @SerialName("user_id") val userId: Long,
@@ -145,6 +153,8 @@ interface FinanceApi {
     suspend fun previewCsv(@Header("Authorization") authorization: String, @Part file: MultipartBody.Part): CsvPreview
     @POST("imports/csv/commit")
     suspend fun commitCsv(@Header("Authorization") authorization: String, @Body request: CsvCommitRequest): CsvCommitResult
+    @GET("analytics/summary")
+    suspend fun summary(@Header("Authorization") authorization: String, @Query("month") month: String): AnalyticsSummary
 }
 
 object ApiClient {

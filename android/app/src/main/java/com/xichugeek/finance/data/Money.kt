@@ -1,6 +1,7 @@
 package com.xichugeek.finance.data
 
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
@@ -18,27 +19,29 @@ object Money {
         }
     }
 
-    fun formatMinor(minor: Long): String {
+    fun formatMinor(minor: Long): String = formatMinor(BigInteger.valueOf(minor))
+
+    fun formatMinor(minor: BigInteger): String {
         val format = NumberFormat.getCurrencyInstance(Locale.CHINA)
         format.minimumFractionDigits = 2
         format.maximumFractionDigits = 2
         format.roundingMode = RoundingMode.UNNECESSARY
-        return format.format(BigDecimal.valueOf(minor, 2))
+        return format.format(BigDecimal(minor, 2))
     }
 }
 
-data class MonthSummary(val incomeMinor: Long, val expenseMinor: Long) {
-    val balanceMinor: Long get() = incomeMinor - expenseMinor
+data class MonthSummary(val incomeMinor: BigInteger, val expenseMinor: BigInteger) {
+    val balanceMinor: BigInteger get() = incomeMinor - expenseMinor
 }
 
 object FinanceMath {
     fun summarize(transactions: List<TransactionEntity>): MonthSummary = MonthSummary(
-        incomeMinor = transactions.filter { it.type == "income" }.sumOf { it.amountMinor },
-        expenseMinor = transactions.filter { it.type == "expense" }.sumOf { it.amountMinor },
+        incomeMinor = transactions.filter { it.type == "income" }.fold(BigInteger.ZERO) { total, item -> total + BigInteger.valueOf(item.amountMinor) },
+        expenseMinor = transactions.filter { it.type == "expense" }.fold(BigInteger.ZERO) { total, item -> total + BigInteger.valueOf(item.amountMinor) },
     )
 
-    fun accountBalance(account: AccountEntity, transactions: List<TransactionEntity>): Long =
-        account.openingBalanceMinor + transactions.filter { it.accountId == account.id }.sumOf {
-            if (it.type == "income") it.amountMinor else -it.amountMinor
+    fun accountBalance(account: AccountEntity, transactions: List<TransactionEntity>): BigInteger =
+        transactions.filter { it.accountId == account.id }.fold(BigInteger.valueOf(account.openingBalanceMinor)) { total, item ->
+            total + BigInteger.valueOf(if (item.type == "income") item.amountMinor else -item.amountMinor)
         }
 }

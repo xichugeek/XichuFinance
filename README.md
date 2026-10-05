@@ -10,6 +10,7 @@ The app offers separate local and cloud ledgers, with Room caching for offline r
 
 - Kotlin, Jetpack Compose, Material 3, Navigation Compose, ViewModel, and Room.
 - Local dashboard, transaction create/read/update/delete, accounts, and categories.
+- Monthly analytics, daily expense line chart, category donut chart and standard CSV preview/confirm import.
 - Integer minor units for money; no floating point database amounts.
 - A fictional data set is inserted on first launch.
 
@@ -35,4 +36,4 @@ The API docs are at `http://127.0.0.1:8000/docs`. Setup generates ignored local 
 
 ## Status and documentation
 
-See [phase status](docs/PHASE_STATUS.md), [Android validation](docs/ANDROID_LOCAL_MVP.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [security](docs/SECURITY.md), and [privacy](docs/PRIVACY.md). The complete Backend acceptance still awaits CSV tests, and the final release acceptance has not passed.
+See [phase status](docs/PHASE_STATUS.md), [Android validation](docs/ANDROID_LOCAL_MVP.md), [analytics validation](docs/ANALYTICS_PHASE_6.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [security](docs/SECURITY.md), and [privacy](docs/PRIVACY.md). Local Backend/CSV/analytics acceptance passed; production and final release acceptance remain open.

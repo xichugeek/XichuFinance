@@ -21,7 +21,7 @@ Room databases are not encrypted. The app sandbox, disabled backups, and device 
 
 The local HTTP API is for development. Production requires HTTPS, the separate server preflight, explicit deployment approval, and runtime security verification. No production server or DNS has been changed.
 
-CSV imports, optional AI providers, release signing, and their security checks are not yet implemented. An eventual AI provider key must remain on the Backend, outside source code, Docker images, and Android APKs.
+CSV previews validate ownership and use signed, expiring tokens with a separate audience from login tokens. Commit checks owned references again and enforces database deduplication. Optional AI providers and release signing remain later phases. An eventual AI provider key must remain on the Backend, outside source code, Docker images, and Android APKs.
 
 ## Before commits and releases
 

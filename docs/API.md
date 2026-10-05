@@ -16,6 +16,7 @@ FastAPI serves interactive documentation at `/docs`. The local Compose configura
 | GET | `/analytics/summary` | Month income, expense, balance, and previous month comparison |
 | GET | `/analytics/categories` | Ranked expense totals by category |
 | GET | `/analytics/trend` | Daily expense totals |
+| GET | `/analytics/largest` | Largest expenses in the selected month; optional limit 1–20, default 5 |
 | POST | `/imports/csv/preview` | Multipart `file`; validates owned references and returns counts, row messages, and a 15-minute preview token; no transaction writes |
 | POST | `/imports/csv/commit` | JSON `preview_token`; confirms that user's valid rows and returns `imported` / `duplicates` counts |
 

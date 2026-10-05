@@ -1,7 +1,3 @@
-from collections import defaultdict
-from datetime import date, timedelta
-from decimal import Decimal
-
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -9,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, current_user, hash_password, verify_password
 from app.db import get_db
+from app.analytics import router as analytics_router
 from app.csv_import import router as csv_router
 from app.models import Account, Category, Transaction, User
 from app.schemas import (
@@ -27,6 +24,7 @@ from app.schemas import (
 
 app = FastAPI(title="Xichu Finance API", version="0.1.0")
 app.include_router(csv_router)
+app.include_router(analytics_router)
 
 DEFAULT_CATEGORIES = {
     "expense": ("餐饮", "交通", "购物", "住房", "娱乐", "医疗", "教育", "通讯", "旅行", "其他"),
@@ -195,62 +193,3 @@ def delete_transaction(transaction_id: int, db: Session = Depends(get_db), user:
     transaction = owned_transaction(db, user.id, transaction_id)
     db.delete(transaction)
     db.commit()
-
-
-def month_bounds(day: date) -> tuple[date, date]:
-    start = day.replace(day=1)
-    end = (start.replace(day=28) + timedelta(days=4)).replace(day=1)
-    return start, end
-
-
-def month_transactions(db: Session, user_id: int, month: date) -> list[Transaction]:
-    start, end = month_bounds(month)
-    return list(db.scalars(select(Transaction).where(
-        Transaction.user_id == user_id,
-        Transaction.transaction_date >= start,
-        Transaction.transaction_date < end,
-    )))
-
-
-@app.get("/analytics/summary")
-def analytics_summary(month: date | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)) -> dict:
-    month = month or date.today()
-    start, _ = month_bounds(month)
-    previous = start - timedelta(days=1)
-    items = month_transactions(db, user.id, month)
-    prev_items = month_transactions(db, user.id, previous)
-    income = sum((row.amount for row in items if row.type == "income"), Decimal("0.00"))
-    expense = sum((row.amount for row in items if row.type == "expense"), Decimal("0.00"))
-    prev_expense = sum((row.amount for row in prev_items if row.type == "expense"), Decimal("0.00"))
-    return {
-        "month": start.isoformat(),
-        "income": str(income),
-        "expense": str(expense),
-        "balance": str(income - expense),
-        "previous_month_expense": str(prev_expense),
-        "expense_change": str(expense - prev_expense),
-    }
-
-
-@app.get("/analytics/categories")
-def analytics_categories(month: date | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)) -> list[dict]:
-    items = month_transactions(db, user.id, month or date.today())
-    names = {category.id: category.name for category in db.scalars(select(Category).where(Category.user_id == user.id))}
-    totals: dict[int, Decimal] = defaultdict(lambda: Decimal("0.00"))
-    for row in items:
-        if row.type == "expense":
-            totals[row.category_id] += row.amount
-    return [
-        {"category_id": category_id, "category": names[category_id], "amount": str(amount)}
-        for category_id, amount in sorted(totals.items(), key=lambda value: value[1], reverse=True)
-    ]
-
-
-@app.get("/analytics/trend")
-def analytics_trend(month: date | None = None, db: Session = Depends(get_db), user: User = Depends(current_user)) -> list[dict]:
-    items = month_transactions(db, user.id, month or date.today())
-    totals: dict[date, Decimal] = defaultdict(lambda: Decimal("0.00"))
-    for row in items:
-        if row.type == "expense":
-            totals[row.transaction_date] += row.amount
-    return [{"date": day.isoformat(), "expense": str(amount)} for day, amount in sorted(totals.items())]
