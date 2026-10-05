@@ -1,6 +1,6 @@
 # Xichu Finance
 
-Xichu Finance is an open source personal finance tracker in development. This repository is being built in stages. The current stage is the Android local MVP; the cloud Backend, PostgreSQL, CSV import, analytics, production API, and signed release APK are not yet available.
+Xichu Finance is an open source personal finance tracker in development. This repository is being built in stages. The Android local MVP has passed emulator validation. Backend code is under test; the PostgreSQL container, CSV import, production API, and signed release APK are not yet validated or available to users.
 
 The app stores account names, categories, and transactions locally with Room. All bundled example transactions are fictional. It never asks for a real card number, CVV, bank password, or identity number. This is a personal bookkeeping project, not a banking system.
 
@@ -23,4 +23,4 @@ The project is configured for JDK 21, AGP 9.1.1, Gradle 9.3.1, and Android SDK 3
 
 ## Status
 
-The local Android MVP passed [build, test, and emulator validation](docs/ANDROID_LOCAL_MVP.md). Later phases add the Backend, synchronization, CSV import, analytics, automatic classification, Ask Finance, Docker deployment, production HTTPS, and a signed release APK.
+The local Android MVP passed [build, test, and emulator validation](docs/ANDROID_LOCAL_MVP.md). The [Backend phase](docs/BACKEND_PHASE_3.md) is in progress. Later phases add Android cloud synchronization, CSV import, automatic classification, Ask Finance, production HTTPS, and a signed release APK.
