@@ -6,7 +6,7 @@ Xichu Finance is a personal bookkeeping application. It stores user-defined acco
 
 Android stores accounts, categories, and transactions in Room on the device. Bundled demo data and repository screenshots are fictional. The local ledger is never uploaded automatically. Choosing cloud login/register enables server storage and synchronization for that separate user ledger; the login screen explains this choice. Room databases are unencrypted; anyone with access to the application's private files could read them.
 
-The session, including email/token, is encrypted before persistence and is removed on logout. Passwords are not stored by the app. Logout hides the user's cache but retains its database for later login to the same user. Backups are disabled.
+The session, including email/token, is encrypted before persistence and is removed on logout. Passwords are not stored by the app. Logout hides the user's cache but retains its database for later login to the same user. Android cloud backup and device-transfer exclusions are configured; manufacturer-specific transfer behavior is not verified.
 
 ## Backend
 

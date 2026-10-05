@@ -1,9 +1,28 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+
+val productionApiUrl = providers.gradleProperty("financeProductionApiUrl")
+    .orElse("https://finance-api.demo.xichugeek.com/").get()
+val validateProductionApi = tasks.register("validateProductionApi") {
+    doLast {
+        val uri = URI(productionApiUrl)
+        val host = uri.host?.lowercase() ?: ""
+        require(uri.scheme == "https" && uri.userInfo == null && uri.query == null && uri.fragment == null && productionApiUrl.endsWith("/")) {
+            "Release API must be an HTTPS base URL without credentials, query or fragment"
+        }
+        require(host.isNotBlank() && host !in listOf("localhost", "127.0.0.1", "::1", "[::1]", "10.0.2.2") &&
+            !host.endsWith(".localhost") && !host.endsWith(".local") && !host.matches(Regex("[0-9.]+")) &&
+            ':' !in host) { "Release API must use a public HTTPS domain" }
+        println("PRODUCTION_API_URL_GUARD = PASS")
+    }
+}
+tasks.configureEach { if (name == "preReleaseBuild") dependsOn(validateProductionApi) }
 
 android {
     namespace = "com.xichugeek.finance"
@@ -28,7 +47,7 @@ android {
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"https://finance-api.demo.xichugeek.com/\"")
+            buildConfigField("String", "API_BASE_URL", "\"$productionApiUrl\"")
         }
     }
 
@@ -41,7 +60,8 @@ android {
         buildConfig = true
     }
     // One keyword catalog is packaged by both the Backend and Android.
-    sourceSets.getByName("main").assets.srcDir("../../backend/app/data")
+    sourceSets.getByName("main").assets.directories.add(file("../../backend/app/data").absolutePath)
+    sourceSets.getByName("androidTest").assets.directories.add(file("schemas").absolutePath)
 }
 
 ksp {

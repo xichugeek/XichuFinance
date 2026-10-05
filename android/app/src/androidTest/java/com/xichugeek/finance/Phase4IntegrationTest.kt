@@ -57,7 +57,7 @@ class Phase4IntegrationTest {
         val category = repoA.categories.first().first { it.name == "餐饮" }
         val item = TransactionEntity(accountId = account.id, categoryId = category.id, type = "expense",
             amountMinor = 1234, description = "虚构云端午餐",
-            transactionDate = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
+            transactionDate = LedgerDates.encode(LocalDate.now()))
         repoA.saveTransaction(item)
         val transaction = repoA.transactions.first().single()
         assertEquals(1234L, transaction.amountMinor)

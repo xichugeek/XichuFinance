@@ -16,7 +16,7 @@ class MoneyTest {
 
     @Test
     fun rejectsInvalidMoney() {
-        listOf("", "abc", "0", "-1", "1.001").forEach {
+        listOf("", "abc", "0", "-1", "1.001", "90000000000000000.00", "NaN", "Infinity").forEach {
             assertThrows(IllegalArgumentException::class.java) { Money.parseMinor(it) }
         }
     }

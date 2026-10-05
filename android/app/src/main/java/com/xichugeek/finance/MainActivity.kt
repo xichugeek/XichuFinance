@@ -67,12 +67,11 @@ import com.xichugeek.finance.data.CategoryEntity
 import com.xichugeek.finance.data.FinanceMath
 import com.xichugeek.finance.data.FinanceAnalytics
 import com.xichugeek.finance.data.Money
+import com.xichugeek.finance.data.LedgerDates
 import com.xichugeek.finance.data.TransactionEntity
 import java.math.BigDecimal
-import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
@@ -297,7 +296,7 @@ internal fun TransactionRow(item: TransactionEntity, state: FinanceUiState, modi
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(item.description, fontWeight = FontWeight.SemiBold)
-                Text("$category · ${LocalDate.ofInstant(Instant.ofEpochMilli(item.transactionDate), ZoneId.systemDefault())}", style = MaterialTheme.typography.bodySmall)
+                Text("$category · ${LedgerDates.decode(item.transactionDate)}", style = MaterialTheme.typography.bodySmall)
             }
             Text(
                 "${if (item.type == "income") "+" else "−"}${Money.formatMinor(item.amountMinor)}",
@@ -320,7 +319,7 @@ private fun TransactionDetail(state: FinanceUiState, model: FinanceViewModel, na
     Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("交易详情", style = MaterialTheme.typography.headlineSmall)
         SummaryCard(item.description, "${if (item.type == "income") "+" else "−"}${Money.formatMinor(item.amountMinor)}")
-        Text("日期：${LocalDate.ofInstant(Instant.ofEpochMilli(item.transactionDate), ZoneId.systemDefault())}")
+        Text("日期：${LedgerDates.decode(item.transactionDate)}")
         Text("账户：$account")
         Text("分类：$category")
         Text("来源：${when (item.source) { "demo" -> "虚构示例"; "csv" -> "CSV 导入"; else -> "手动录入" }}")
@@ -341,7 +340,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
     var description by rememberSaveable(original?.id) { mutableStateOf(original?.description ?: "") }
     var amount by rememberSaveable(original?.id) { mutableStateOf(original?.let { BigDecimal.valueOf(it.amountMinor, 2).toPlainString() } ?: "") }
     var date by rememberSaveable(original?.id) {
-        mutableStateOf(original?.let { LocalDate.ofInstant(Instant.ofEpochMilli(it.transactionDate), ZoneId.systemDefault()).toString() } ?: LocalDate.now().toString())
+        mutableStateOf(original?.let { LedgerDates.decode(it.transactionDate).toString() } ?: LocalDate.now().toString())
     }
     var accountId by rememberSaveable(original?.id, state.accounts.size) { mutableLongStateOf(original?.accountId ?: state.accounts.firstOrNull()?.id ?: 0L) }
     var categoryId by rememberSaveable(original?.id, type, state.categories.size) {
@@ -399,7 +398,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
                                 type = type,
                                 amountMinor = minor,
                                 description = description.trim(),
-                                transactionDate = parsedDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                                transactionDate = LedgerDates.encode(parsedDate),
                                 source = original?.source ?: "manual",
                                 externalId = original?.externalId,
                             ),
@@ -502,4 +501,4 @@ private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel, onRul
 }
 
 private fun monthOf(timestamp: Long): YearMonth =
-    YearMonth.from(LocalDate.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()))
+    FinanceAnalytics.monthOf(timestamp)

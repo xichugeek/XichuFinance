@@ -13,7 +13,9 @@ object Money {
         require(value.signum() > 0) { "金额必须大于 0" }
         require(value.scale() <= 2) { "金额最多保留两位小数" }
         return try {
-            value.movePointRight(2).longValueExact()
+            value.movePointRight(2).longValueExact().also {
+                require(it <= 999_999_999_999_999_999L) { "金额超出范围" }
+            }
         } catch (_: ArithmeticException) {
             throw IllegalArgumentException("金额超出范围")
         }

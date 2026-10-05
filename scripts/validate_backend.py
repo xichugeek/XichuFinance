@@ -54,6 +54,7 @@ def validate(base_url: str) -> None:
 
     assert call("GET", "/health") == {"status": "healthy"}
     assert "Swagger UI" in call("GET", "/docs")
+    assert "/ai/ask" in call("GET", "/openapi.json")["paths"]
     call("GET", "/me", expected=401)
     print("PASS: database health and API docs")
     token_a, token_b = user("a"), user("b")

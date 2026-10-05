@@ -3,8 +3,6 @@ package com.xichugeek.finance.data
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
-import java.time.Instant
-import java.time.ZoneId
 import java.math.BigDecimal
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -110,7 +108,7 @@ class FinanceRepository(
                     type = "expense",
                     amountMinor = sample.second,
                     description = sample.first,
-                    transactionDate = today.minusDays(index.toLong()).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                    transactionDate = LedgerDates.encode(today.minusDays(index.toLong())),
                     source = "demo",
                 ),
             )
@@ -122,7 +120,7 @@ class FinanceRepository(
                 type = "income",
                 amountMinor = 600000,
                 description = "虚构工资",
-                transactionDate = today.withDayOfMonth(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                transactionDate = LedgerDates.encode(today.withDayOfMonth(1)),
                 source = "demo",
             ),
         )
@@ -166,7 +164,7 @@ class FinanceRepository(
                 accountId = transaction.accountId, categoryId = transaction.categoryId, type = transaction.type,
                 amount = BigDecimal.valueOf(transaction.amountMinor, 2).toPlainString(),
                 description = transaction.description.trim(),
-                transactionDate = LocalDate.ofInstant(Instant.ofEpochMilli(transaction.transactionDate), ZoneId.systemDefault()).toString(),
+                transactionDate = LedgerDates.decode(transaction.transactionDate).toString(),
             )
             val result = if (transaction.id == 0L) api.addTransaction(authorization, request)
             else api.updateTransaction(authorization, transaction.id, request)

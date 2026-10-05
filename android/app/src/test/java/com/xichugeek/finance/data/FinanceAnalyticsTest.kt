@@ -5,13 +5,12 @@ import org.junit.Test
 import java.math.BigInteger
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 
 class FinanceAnalyticsTest {
     @Test fun monthBoundariesRanksDailyTotalsAndPreviousMonth() {
         fun row(id: Long, date: String, amount: Long, category: Long = 1, type: String = "expense") = TransactionEntity(
             id = id, accountId = 1, categoryId = category, type = type, amountMinor = amount, description = "fictional",
-            transactionDate = LocalDate.parse(date).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli())
+            transactionDate = LedgerDates.encode(LocalDate.parse(date)))
         val items = listOf(row(1, "2026-09-30", 2500), row(2, "2026-10-01", 1), row(3, "2026-10-01", 10),
             row(4, "2026-10-02", 20, 2), row(5, "2026-10-02", 10000000000, 3, "income"), row(6, "2026-11-01", 5000))
         val analysis = FinanceAnalytics.calculate(YearMonth.of(2026, 10), items, listOf(CategoryEntity(1, "餐饮", "expense"), CategoryEntity(2, "交通", "expense")))

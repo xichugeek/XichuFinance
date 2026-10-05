@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 MoneyValue = Decimal
@@ -16,7 +16,7 @@ class RegisterIn(BaseModel):
 
 class LoginIn(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=128)
 
 
 class UserOut(BaseModel):
@@ -36,6 +36,13 @@ class AccountIn(BaseModel):
     kind: Literal["cash", "bank", "credit", "alipay", "wechat", "other"]
     opening_balance: MoneyValue = Field(default=Decimal("0.00"), max_digits=18, decimal_places=2)
 
+    @field_validator("name")
+    @classmethod
+    def nonblank_name(cls, value):
+        if not value.strip():
+            raise ValueError("Name cannot be blank")
+        return value.strip()
+
 
 class AccountOut(AccountIn):
     model_config = ConfigDict(from_attributes=True)
@@ -48,6 +55,13 @@ class AccountOut(AccountIn):
 class CategoryIn(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     type: TransactionType
+
+    @field_validator("name")
+    @classmethod
+    def nonblank_name(cls, value):
+        if not value.strip():
+            raise ValueError("Name cannot be blank")
+        return value.strip()
 
 
 class CategoryOut(CategoryIn):
@@ -64,6 +78,13 @@ class TransactionIn(BaseModel):
     currency: Literal["CNY"] = "CNY"
     description: str = Field(min_length=1, max_length=500)
     transaction_date: date
+
+    @field_validator("description")
+    @classmethod
+    def nonblank_description(cls, value):
+        if not value.strip():
+            raise ValueError("Description cannot be blank")
+        return value.strip()
 
 
 class TransactionOut(TransactionIn):

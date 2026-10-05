@@ -40,7 +40,7 @@ class Phase4OfflineUiTest {
                 accountId = repo.accounts.first().single().id,
                 categoryId = repo.categories.first().first { it.name == "餐饮" }.id,
                 type = "expense", amountMinor = 1050, description = "虚构离线午餐",
-                transactionDate = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                transactionDate = LedgerDates.encode(LocalDate.now()),
             ))
             SessionStore(application).save(session)
         }

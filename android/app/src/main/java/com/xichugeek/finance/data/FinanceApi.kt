@@ -22,7 +22,6 @@ import retrofit2.http.Query
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 import java.util.concurrent.TimeUnit
 
 @Serializable
@@ -128,7 +127,7 @@ data class RemoteTransaction(
         return TransactionEntity(
             id = id, accountId = accountId, categoryId = categoryId, type = type,
             amountMinor = Money.parseMinor(amount), currency = currency, description = description,
-            transactionDate = LocalDate.parse(transactionDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            transactionDate = LedgerDates.encode(LocalDate.parse(transactionDate)),
             source = source, externalId = externalId,
             createdAt = Instant.parse(createdAt).toEpochMilli(), updatedAt = Instant.parse(updatedAt).toEpochMilli(),
         )

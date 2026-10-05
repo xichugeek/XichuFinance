@@ -3,10 +3,7 @@ package com.xichugeek.finance.data
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.math.RoundingMode
-import java.time.Instant
-import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 
 data class CategoryTotal(val id: Long, val name: String, val amountMinor: BigInteger)
 data class MonthlyAnalysis(
@@ -16,14 +13,14 @@ data class MonthlyAnalysis(
 )
 
 object FinanceAnalytics {
-    fun monthOf(timestamp: Long): YearMonth = YearMonth.from(LocalDate.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()))
+    fun monthOf(timestamp: Long): YearMonth = YearMonth.from(LedgerDates.decode(timestamp))
 
     fun calculate(month: YearMonth, transactions: List<TransactionEntity>, categories: List<CategoryEntity>): MonthlyAnalysis {
         val current = transactions.filter { monthOf(it.transactionDate) == month }
         val previous = transactions.filter { monthOf(it.transactionDate) == month.minusMonths(1) }
         val expenses = current.filter { it.type == "expense" }
         val daily = (1..month.lengthOfMonth()).map { day ->
-            expenses.filter { LocalDate.ofInstant(Instant.ofEpochMilli(it.transactionDate), ZoneId.systemDefault()).dayOfMonth == day }
+            expenses.filter { LedgerDates.decode(it.transactionDate).dayOfMonth == day }
                 .fold(BigInteger.ZERO) { total, row -> total + BigInteger.valueOf(row.amountMinor) }
         }
         val names = categories.associate { it.id to it.name }

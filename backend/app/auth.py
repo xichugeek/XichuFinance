@@ -50,7 +50,7 @@ def current_user(
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
     try:
-        payload = jwt.decode(credentials.credentials, token_secret(), algorithms=["HS256"])
+        payload = jwt.decode(credentials.credentials, token_secret(), algorithms=["HS256"], options={"require": ["sub", "iat", "exp"]})
         user_id = int(payload["sub"])
     except (jwt.PyJWTError, ValueError, KeyError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from None

@@ -137,13 +137,27 @@ interface FinanceDao {
 
 @Database(
     entities = [AccountEntity::class, CategoryEntity::class, TransactionEntity::class, RuleEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class FinanceDatabase : RoomDatabase() {
     abstract fun dao(): FinanceDao
 
     companion object {
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val updates = mutableListOf<Pair<Long, Long>>()
+                db.query("SELECT id, transactionDate FROM transactions").use { cursor ->
+                    while (cursor.moveToNext()) {
+                        // Preserve the date displayed in the device's current zone
+                        // at upgrade, then store it independently of future zones.
+                        val date = java.time.Instant.ofEpochMilli(cursor.getLong(1)).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+                        updates.add(cursor.getLong(0) to LedgerDates.encode(date))
+                    }
+                }
+                updates.forEach { (id, day) -> db.execSQL("UPDATE transactions SET transactionDate = ? WHERE id = ?", arrayOf(day, id)) }
+            }
+        }
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("CREATE TABLE IF NOT EXISTS classification_rules (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, keyword TEXT NOT NULL, categoryId INTEGER NOT NULL, type TEXT NOT NULL, priority INTEGER NOT NULL, enabled INTEGER NOT NULL, FOREIGN KEY(categoryId) REFERENCES categories(id) ON UPDATE NO ACTION ON DELETE RESTRICT)")
@@ -160,7 +174,7 @@ abstract class FinanceDatabase : RoomDatabase() {
                 .take(8).joinToString("") { "%02x".format(it) }
             val name = "cloud_${serverHash}_user_$userId.db"
             return userInstances.getOrPut(name) {
-                Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, name).addMigrations(MIGRATION_1_2).build()
+                Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, name).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
             }
         }
 
@@ -169,7 +183,7 @@ abstract class FinanceDatabase : RoomDatabase() {
                 context.applicationContext,
                 FinanceDatabase::class.java,
                 "xichu_finance.db",
-            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
         }
     }
 }
