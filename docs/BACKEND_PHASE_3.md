@@ -1,17 +1,40 @@
 # PHASE 3 — Local Backend and PostgreSQL
 
-Status: **IN PROGRESS** (2026-10-05, Asia/Shanghai)
+Status: **local API/PostgreSQL foundation PASS** (2026-10-05, Asia/Shanghai). The complete `BACKEND_LOCAL` acceptance remains open for CSV import in PHASE 5.
 
 The first Backend implementation is in `backend/`. It provides FastAPI `/docs`, email/password registration and login, Argon2 password hashes, 12-hour JWT access tokens, user-scoped accounts, categories, transactions, and month analytics. Money uses `NUMERIC(18,2)` and Python `Decimal`. Alembic revision `0001_initial` creates the database schema. The local Compose file defines an API and PostgreSQL 17 with a named volume; PostgreSQL has no published host port, and the API binds only to `127.0.0.1:8000`.
 
 ## Verified so far
 
 - `backend/.venv/Scripts/python.exe -m pytest -q`: **6 passed**, covering live database health reporting, `/docs`, registration/login, Argon2, account and transaction CRUD, user isolation, analytics, decimal money precision, and invalid money.
-- Alembic `upgrade head` and a second `upgrade head` succeeded against a temporary SQLite database; `current` reported `0001_initial (head)`. PostgreSQL migration remains **NOT VERIFIED**.
-- Docker Desktop 4.93.0 was installed in per-user mode from a Docker Inc-signed installer. Docker CLI `29.8.1` and Compose `v5.5.1` run; `docker compose config --quiet` returned success with temporary placeholder environment values.
+- Actual Compose services `xichufinance-api-1` and `xichufinance-db-1` both report **healthy**. The database reports **PostgreSQL 17.11**.
+- `python scripts/validate_backend.py` returned **LOCAL_API_CORE = PASS** against the running API/PostgreSQL containers: health/docs, registration/login/authentication, accounts/categories, transaction CRUD, analytics, invalid money, and cross-user read/write/delete isolation.
+- Live decimal totals matched `0.01 + 0.10 + 0.20 = 0.31`; income `100000000.00` minus those expenses returned `99999999.69`.
+- Alembic `current` reported `0001_initial (head)` on PostgreSQL. A repeated `upgrade head` returned success, and `alembic check` reported `No new upgrade operations detected`.
+- PostgreSQL container recreation preserved the named volume: the fictional user count remained **2** before and after recreation, and both services became healthy again.
+- Docker CLI `29.8.1`, Compose `v5.5.1`, the signed official installer, and a real Linux smoke container were verified.
 
 ## Runtime gate
 
-The Docker Engine is **NOT RUNNING**. Docker Desktop's own log reports `Virtual Machine Platform not enabled` and `No virtualization available`; `docker desktop status` is `stopped`, and `wsl --version` did not return a version. Enabling Windows virtualization/WSL features is a system configuration change and may require administrator access and a restart. The user was asked how to proceed before that change. Therefore **BACKEND_LOCAL, POSTGRESQL, and DOCKER_RUNTIME are NOT VERIFIED**, and PHASE 3 cannot be marked PASS.
+**DOCKER_RUNTIME = PASS.** After the user installed WSL **3.0.1.0** (default version **2**), Docker Desktop's per-user launcher failed because its startup registry information was missing. The user explicitly approved uninstall/reinstall. Settings were backed up outside the repository first; no Docker distribution or VHD file existed at that point. The official signed installer successfully installed Docker Desktop **4.93.0** for all users in `C:\Program Files\Docker\Docker`. `docker version` now returns the Linux server version **29.8.1**, and an actual container printed `Hello from Docker!` and exited with code 0.
+
+Docker Hub image pulls encountered a TLS handshake timeout. The Docker verified account on [AWS ECR Public](https://gallery.ecr.aws/docker/) successfully supplied `public.ecr.aws/docker/library/hello-world:latest`, digest `sha256:5e23090353324d887c48ad5e5c56d294eab81588df9605b07d1afe895f9cc8f8`. Compose supports optional `POSTGRES_IMAGE` and `PYTHON_IMAGE` settings for this distribution source while retaining Docker Hub defaults. Both abandoned upgrade download jobs were cancelled after the successful reinstall.
+
+**POSTGRESQL, MIGRATION, DOCKER_RUNTIME, and LOCAL_API_CORE = PASS.** The complete **BACKEND_LOCAL** label is reserved until CSV import is implemented and verified in PHASE 5. Android integration, CSV, classification, Ask Finance, production HTTPS, and signed APK acceptance remain open.
+
+## Local commands
+
+From the repository root, with Python installed and Docker Engine running:
+
+```powershell
+python scripts/setup_local_env.py
+docker compose --project-name xichufinance up -d --build --wait
+docker compose --project-name xichufinance ps
+python scripts/validate_backend.py
+```
+
+If Docker Hub and PyPI are unreachable, create the first `.env` using `python scripts/setup_local_env.py --ecr --tuna` instead. `--ecr` uses Docker Official Images on AWS ECR Public; `--tuna` uses [Tsinghua's public HTTPS PyPI mirror](https://mirrors.tuna.tsinghua.edu.cn/help/pypi/). Both overrides were used successfully on this machine after the original endpoints failed. The script preserves an existing `.env`; it never regenerates passwords for an existing database. To adjust an existing file, use the commented settings in `.env.example`. Package-index build arguments must contain only public URLs, never credentials. Open a new terminal after installing Docker so the CLI and its credential helper are on PATH.
+
+The HTTP validation script uses only loopback addresses and fictional users. It deletes its transactions and account afterward. Two test users and their categories remain in the local database because user/category deletion is not part of the current API. It does not print passwords or tokens. CSV import and later-phase features are outside this script's checks.
 
 The API has not been connected to Android, and CSV import and AI endpoints have not yet been implemented. Their later phase gates remain open.
