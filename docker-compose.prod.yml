@@ -1,0 +1,78 @@
+name: xichufinance-prod
+
+services:
+  finance-db:
+    image: ${POSTGRES_IMAGE:-public.ecr.aws/docker/library/postgres:17.11-alpine}
+    environment:
+      POSTGRES_DB: xichu_finance
+      POSTGRES_USER: xichu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a private production POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finance_database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xichu -d xichu_finance"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+  finance-api:
+    image: xichufinance-api:${FINANCE_RELEASE_TAG:?Set FINANCE_RELEASE_TAG to the deployed Git commit}
+    build:
+      context: ./backend
+      args:
+        PYTHON_IMAGE: ${PYTHON_IMAGE:-public.ecr.aws/docker/library/python:3.12-slim}
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    environment:
+      DATABASE_URL: postgresql+psycopg://xichu:${POSTGRES_PASSWORD:?Set a private production POSTGRES_PASSWORD}@finance-db:5432/xichu_finance
+      JWT_SECRET: ${JWT_SECRET:?Set a private production JWT_SECRET}
+      AI_ENABLED: "false"
+    expose:
+      - "8000"
+    networks:
+      finance_database: {}
+      gateway:
+        aliases:
+          - xichufinance-api
+    depends_on:
+      finance-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 128
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    restart: unless-stopped
+
+networks:
+  finance_database:
+    internal: true
+  gateway:
+    external: true
+    name: xg_edge
+
+volumes:
+  postgres_data:

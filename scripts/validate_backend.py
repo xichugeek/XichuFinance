@@ -1,4 +1,4 @@
-"""Validate the local Docker API with fictional users; never print credentials."""
+"""Validate the API with fictional users; production writes require explicit flags."""
 
 import argparse
 from datetime import date
@@ -11,11 +11,22 @@ from urllib.request import Request, urlopen
 import uuid
 
 
-def validate(base_url: str) -> None:
+def validate_target(base_url: str, production: bool, confirmed: bool) -> str:
     parsed = urlsplit(base_url)
-    if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
-        raise ValueError("This script only writes to a local HTTP API")
-    base_url = base_url.rstrip("/")
+    if parsed.username is not None or parsed.password is not None or parsed.query or parsed.fragment or parsed.path not in {"", "/"}:
+        raise ValueError("Use a base URL without credentials, paths, queries or fragments")
+    if production:
+        if not confirmed:
+            raise ValueError("Production validation requires --confirm-fictional-writes after user approval")
+        if parsed.scheme != "https" or parsed.hostname != "finance-api.demo.xichugeek.com" or parsed.port not in {None, 443}:
+            raise ValueError("Production validation is restricted to the approved Finance HTTPS domain")
+    elif parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
+        raise ValueError("Local validation only writes to a loopback HTTP API")
+    return base_url.rstrip("/")
+
+
+def validate(base_url: str, production: bool = False, confirmed: bool = False) -> None:
+    base_url = validate_target(base_url, production, confirmed)
     today = date.today().isoformat()
     month_query = f"?month={today}"
 
@@ -162,14 +173,17 @@ def validate(base_url: str) -> None:
         for row in call("GET", "/transactions", token_a):
             call("DELETE", f"/transactions/{row['id']}", token_a, expected=204)
         call("DELETE", f"/accounts/{account_id}", token_a, expected=204)
-    print("BACKEND_LOCAL = PASS (API/PostgreSQL, CSV, analytics, classification and Ask; production remains a separate gate)")
+    label = "BACKEND_PRODUCTION" if production else "BACKEND_LOCAL"
+    print(f"{label} = PASS (API/PostgreSQL, CSV, analytics, classification and Ask)")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
+    parser.add_argument("--production", action="store_true")
+    parser.add_argument("--confirm-fictional-writes", action="store_true", help="Use only after production acceptance data has been approved")
     arguments = parser.parse_args()
     try:
-        validate(arguments.base_url)
+        validate(arguments.base_url, arguments.production, arguments.confirm_fictional_writes)
     except (AssertionError, URLError, ValueError, KeyError, StopIteration) as error:
-        raise SystemExit(f"LOCAL_API_CORE = FAIL: {error}") from None
+        raise SystemExit(f"API_VALIDATION = FAIL: {error}") from None

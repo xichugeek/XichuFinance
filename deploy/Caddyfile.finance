@@ -1,0 +1,18 @@
+# Append this site block to the existing Caddyfile only after approval.
+finance-api.demo.xichugeek.com {
+    encode zstd gzip
+    request_body {
+        max_size 2MB
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+        -Server
+    }
+    reverse_proxy xichufinance-api:8000 {
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 30s
+        }
+    }
+}
