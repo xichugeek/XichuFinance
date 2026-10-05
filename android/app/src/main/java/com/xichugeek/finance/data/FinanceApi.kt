@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.MultipartBody
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.http.Body
@@ -14,6 +15,8 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Multipart
+import retrofit2.http.Part
 import retrofit2.http.Path
 import java.math.BigDecimal
 import java.time.Instant
@@ -72,6 +75,31 @@ data class TransactionRequest(
 )
 
 @Serializable
+data class CsvPreviewRow(
+    @SerialName("row_number") val rowNumber: Int,
+    val status: String, val message: String, val description: String,
+    val amount: String, val type: String, val account: String, val category: String,
+)
+
+@Serializable
+data class CsvPreview(
+    @SerialName("preview_token") val token: String,
+    @SerialName("total_rows") val totalRows: Int,
+    @SerialName("valid_rows") val validRows: Int,
+    @SerialName("error_rows") val errorRows: Int,
+    @SerialName("duplicate_rows") val duplicateRows: Int,
+    val rows: List<CsvPreviewRow>,
+) { override fun toString() = "CsvPreview(total=$totalRows, token=[redacted])" }
+
+@Serializable
+data class CsvCommitRequest(@SerialName("preview_token") val token: String) {
+    override fun toString() = "CsvCommitRequest([redacted])"
+}
+
+@Serializable
+data class CsvCommitResult(val imported: Int, val duplicates: Int)
+
+@Serializable
 data class RemoteTransaction(
     val id: Long,
     @SerialName("user_id") val userId: Long,
@@ -113,6 +141,10 @@ interface FinanceApi {
     @POST("transactions") suspend fun addTransaction(@Header("Authorization") authorization: String, @Body item: TransactionRequest): RemoteTransaction
     @PUT("transactions/{id}") suspend fun updateTransaction(@Header("Authorization") authorization: String, @Path("id") id: Long, @Body item: TransactionRequest): RemoteTransaction
     @DELETE("transactions/{id}") suspend fun deleteTransaction(@Header("Authorization") authorization: String, @Path("id") id: Long)
+    @Multipart @POST("imports/csv/preview")
+    suspend fun previewCsv(@Header("Authorization") authorization: String, @Part file: MultipartBody.Part): CsvPreview
+    @POST("imports/csv/commit")
+    suspend fun commitCsv(@Header("Authorization") authorization: String, @Body request: CsvCommitRequest): CsvCommitResult
 }
 
 object ApiClient {

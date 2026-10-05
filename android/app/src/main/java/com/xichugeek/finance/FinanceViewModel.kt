@@ -13,6 +13,12 @@ import com.xichugeek.finance.data.FinanceRepository
 import com.xichugeek.finance.data.SessionStore
 import com.xichugeek.finance.data.TransactionEntity
 import com.xichugeek.finance.data.UserSession
+import com.xichugeek.finance.data.CsvPreview
+import com.xichugeek.finance.data.CsvCommitResult
+import com.xichugeek.finance.data.StandardCsvParser
+import android.net.Uri
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -36,6 +42,8 @@ data class FinanceUiState(
     val email: String = "",
     val syncStatus: String = "",
     val loginExpired: Boolean = false,
+    val csvPreview: CsvPreview? = null,
+    val csvResult: CsvCommitResult? = null,
 ) {
     val hasLedger: Boolean get() = localMode || userId != null
 }
@@ -69,6 +77,8 @@ class FinanceViewModel @JvmOverloads constructor(
     private fun friendlyError(error: Exception): String = when (error) {
         is HttpException -> when (error.code()) {
             401 -> if (_state.value.hasLedger) "登录已过期，请在设置中重新登录" else "邮箱或密码不正确"
+            400 -> "请求无效或导入预览已过期，请重新选择 CSV"
+            413 -> "CSV 超过大小或行数限制，请拆分文件"
             404 -> "记录已不存在，请刷新账本"
             409 -> "记录重复，或账户仍有关联交易"
             422 -> "请检查输入格式、名称长度和金额"
@@ -150,6 +160,21 @@ class FinanceViewModel @JvmOverloads constructor(
         _state.value = FinanceUiState(loading = false, busy = true)
     }
     fun refresh() = runAction { if (!_state.value.localMode) refreshCache() }
+    fun previewCsv(uri: Uri) = runAction {
+        _state.update { it.copy(csvPreview = null, csvResult = null) }
+        val bytes = withContext(Dispatchers.IO) {
+            getApplication<Application>().contentResolver.openInputStream(uri)?.use { StandardCsvParser.readLimited(it) }
+                ?: throw IOException("Cannot read selected file")
+        }
+        _state.update { it.copy(csvPreview = checkNotNull(repository).previewCsv(bytes)) }
+    }
+    fun commitCsv() = runAction {
+        val preview = checkNotNull(_state.value.csvPreview)
+        require(preview.validRows > 0) { "没有可导入的有效行" }
+        val result = checkNotNull(repository).commitCsv(preview)
+        _state.update { it.copy(csvPreview = null, csvResult = result) }
+        refreshCache()
+    }
     fun addAccount(name: String, kind: String, onSuccess: () -> Unit = {}) =
         runAction(onSuccess) { checkNotNull(repository).addAccount(name, kind) }
     fun updateAccount(account: AccountEntity, onSuccess: () -> Unit = {}) =

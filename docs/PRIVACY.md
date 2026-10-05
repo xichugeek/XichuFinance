@@ -16,6 +16,8 @@ The HTTP validation script creates fictional users at `example.com`. It cleans u
 
 ## Features still being developed
 
-CSV import and optional AI providers will need additional data handling documentation when implemented. There is currently no automatic AI provider call. Any future AI enhancement must be optional and use Backend-only credentials; the app will call its own Backend.
+CSV selection uploads the chosen content to the Backend for preview. Raw files and original filenames are not retained after preview. The signed, unencrypted preview token contains validated rows and is held only in Android memory. Confirmed rows are stored as transactions; invalid and duplicate rows are skipped. Production transport must use HTTPS. See [CSV_FORMAT.md](CSV_FORMAT.md).
+
+Optional AI providers will need additional data handling documentation when implemented. There is currently no automatic AI provider call. Any future AI enhancement must be optional and use Backend-only credentials; the app will call its own Backend.
 
 User/account deletion, export, server retention, and production backup/restore behavior are not yet a complete privacy workflow. A deployed service must document those behaviors before being presented as ready for real users. No production data has been created or altered during the current local phases.

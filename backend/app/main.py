@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, current_user, hash_password, verify_password
 from app.db import get_db
+from app.csv_import import router as csv_router
 from app.models import Account, Category, Transaction, User
 from app.schemas import (
     AccountIn,
@@ -25,6 +26,7 @@ from app.schemas import (
 
 
 app = FastAPI(title="Xichu Finance API", version="0.1.0")
+app.include_router(csv_router)
 
 DEFAULT_CATEGORIES = {
     "expense": ("餐饮", "交通", "购物", "住房", "娱乐", "医疗", "教育", "通讯", "旅行", "其他"),

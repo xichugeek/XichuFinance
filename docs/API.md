@@ -16,7 +16,9 @@ FastAPI serves interactive documentation at `/docs`. The local Compose configura
 | GET | `/analytics/summary` | Month income, expense, balance, and previous month comparison |
 | GET | `/analytics/categories` | Ranked expense totals by category |
 | GET | `/analytics/trend` | Daily expense totals |
+| POST | `/imports/csv/preview` | Multipart `file`; validates owned references and returns counts, row messages, and a 15-minute preview token; no transaction writes |
+| POST | `/imports/csv/commit` | JSON `preview_token`; confirms that user's valid rows and returns `imported` / `duplicates` counts |
 
 For analytics endpoints, optional `month=YYYY-MM-DD` selects the month containing that date. Money values are decimal strings in JSON. Transaction creation accepts `account_id`, `category_id`, `type` (`income` or `expense`), positive `amount` with up to two fractional digits, `currency` (`CNY`), `description`, and `transaction_date` (`YYYY-MM-DD`). Referenced accounts and categories must belong to the logged-in user.
 
-CSV preview/commit, smart classification, and Ask Finance endpoints are planned for later phases and are not advertised as available yet. The production HTTPS API is not deployed.
+See [CSV format and privacy](CSV_FORMAT.md). Preview tokens contain private row data and are signed, not encrypted; do not log them. Invalid/expired previews return HTTP 400, another user's preview returns 404, and deleted/changed references return 409. Smart classification and Ask Finance remain later phases. The production HTTPS API is not deployed.

@@ -1,0 +1,4 @@
+date,description,amount,type,account
+2026-09-01,早餐,15.00,expense,支付宝
+2026-09-01,工资,6000.00,income,银行卡
+2026-09-02,地铁,4.00,expense,微信

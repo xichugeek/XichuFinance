@@ -2,6 +2,7 @@
 
 import argparse
 from datetime import date
+from decimal import Decimal
 import json
 import secrets
 from urllib.error import HTTPError, URLError
@@ -18,11 +19,11 @@ def validate(base_url: str) -> None:
     today = date.today().isoformat()
     month_query = f"?month={today}"
 
-    def call(method, path, token=None, payload=None, expected=200):
-        headers = {"Content-Type": "application/json"}
+    def call(method, path, token=None, payload=None, expected=200, raw_body=None, content_type="application/json"):
+        headers = {"Content-Type": content_type}
         if token:
             headers["Authorization"] = f"Bearer {token}"
-        body = json.dumps(payload).encode() if payload is not None else None
+        body = raw_body if raw_body is not None else json.dumps(payload).encode() if payload is not None else None
         request = Request(base_url + path, data=body, headers=headers, method=method)
         try:
             response = urlopen(request, timeout=15)
@@ -108,11 +109,38 @@ def validate(base_url: str) -> None:
         tx_ids.remove(tx_id)
         call("GET", f"/transactions/{tx_id}", token_a, expected=404)
         print("PASS: invalid money and transaction deletion")
+
+        csv = "date,description,amount,type,account,category\n" + "\n".join([
+            f"{today},Fictional CSV breakfast,15.00,expense,Fictional renamed cash,餐饮",
+            f"{today},Fictional CSV salary,6000.00,income,Fictional renamed cash,工资",
+            f"{today},Fictional CSV metro,4.00,expense,Fictional renamed cash,交通",
+        ]) + "\n"
+        def csv_preview(token):
+            boundary = "xichu" + uuid.uuid4().hex
+            body = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="sample.csv"\r\n'
+                    f'Content-Type: text/csv\r\n\r\n{csv}\r\n--{boundary}--\r\n').encode()
+            return call("POST", "/imports/csv/preview", token, raw_body=body, content_type=f"multipart/form-data; boundary={boundary}")
+        before_count = len(call("GET", "/transactions", token_a))
+        before_summary = call("GET", "/analytics/summary" + month_query, token_a)
+        preview = csv_preview(token_a)
+        assert (preview["total_rows"], preview["valid_rows"], preview["error_rows"], preview["duplicate_rows"]) == (3, 3, 0, 0)
+        assert len(call("GET", "/transactions", token_a)) == before_count
+        commit = {"preview_token": preview["preview_token"]}
+        call("POST", "/imports/csv/commit", token_b, commit, 404)
+        assert call("POST", "/imports/csv/commit", token_a, commit) == {"imported": 3, "duplicates": 0}
+        assert call("POST", "/imports/csv/commit", token_a, commit) == {"imported": 0, "duplicates": 3}
+        repeat = csv_preview(token_a)
+        assert repeat["valid_rows"] == 0 and repeat["duplicate_rows"] == 3
+        assert len(call("GET", "/transactions", token_a)) == before_count + 3
+        after_summary = call("GET", "/analytics/summary" + month_query, token_a)
+        assert Decimal(after_summary["expense"]) - Decimal(before_summary["expense"]) == Decimal("19.00")
+        assert Decimal(after_summary["income"]) - Decimal(before_summary["income"]) == Decimal("6000.00")
+        print("PASS: CSV preview without writes, commit/replay/deduplication, user isolation, decimal analytics")
     finally:
-        for tx_id in tx_ids:
-            call("DELETE", f"/transactions/{tx_id}", token_a, expected=204)
+        for row in call("GET", "/transactions", token_a):
+            call("DELETE", f"/transactions/{row['id']}", token_a, expected=204)
         call("DELETE", f"/accounts/{account_id}", token_a, expected=204)
-    print("LOCAL_API_CORE = PASS (CSV and later phases are not tested here)")
+    print("BACKEND_LOCAL = PASS (core API/PostgreSQL and CSV; AI and production remain later gates)")
 
 
 if __name__ == "__main__":

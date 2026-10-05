@@ -5,6 +5,9 @@ import java.time.LocalDate
 import java.time.Instant
 import java.time.ZoneId
 import java.math.BigDecimal
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class FinanceRepository(
     private val database: FinanceDatabase,
@@ -17,6 +20,18 @@ class FinanceRepository(
     val accounts = dao.observeAccounts()
     val categories = dao.observeCategories()
     val transactions = dao.observeTransactions()
+
+    suspend fun previewCsv(bytes: ByteArray): CsvPreview {
+        require(api != null) { "CSV 导入需要登录云端账本" }
+        StandardCsvParser.inspect(bytes)
+        val part = MultipartBody.Part.createFormData("file", "transactions.csv", bytes.toRequestBody("text/csv".toMediaType()))
+        return api.previewCsv(authorization, part)
+    }
+
+    suspend fun commitCsv(preview: CsvPreview): CsvCommitResult {
+        require(api != null) { "CSV 导入需要登录云端账本" }
+        return api.commitCsv(authorization, CsvCommitRequest(preview.token))
+    }
 
     suspend fun refresh() {
         val remote = api ?: return
