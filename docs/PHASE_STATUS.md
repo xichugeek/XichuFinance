@@ -18,3 +18,5 @@ Last checked: 2026-10-06 (Asia/Shanghai)
 | PHASE 11 — Release APK | PASS | Dedicated signing key/backup; clean signed APK/AAB; 11 Release JVM tests, valid signature, actual production device workflow and force-stop/reinstall retention passed. See [actual evidence](APK_RELEASE_VALIDATION.md). |
 
 Production changes are isolated to the approved Finance deployment and its added DNS/proxy route. Acceptance data is fictional; no existing financial data was used.
+
+**PROJECT_002_XICHUFINANCE = READY**. All required gates and their practical limits are recorded in [final acceptance](PROJECT_READY.md). APK/AAB/checksums are locally delivered in ignored `dist/`, with separate verified backups; no Play or public GitHub Release publication is claimed.

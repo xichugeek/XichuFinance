@@ -1,5 +1,7 @@
 # Project 002 final acceptance
 
+**PROJECT_002_XICHUFINANCE = READY**
+
 Checked 2026-10-06 (Asia/Shanghai), in the original `XichuFinance` repository. Phase documents preserve the history of each acceptance run. The current state is summarized here and in [PHASE_STATUS](PHASE_STATUS.md).
 
 | Requirement | Evidence |
@@ -18,7 +20,7 @@ Checked 2026-10-06 (Asia/Shanghai), in the original `XichuFinance` repository. P
 | README / beginner / deployment guides | PASS — reviewed [README](../README.md), [beginner steps](BEGINNER_GUIDE.md), [deployment](SERVER_DEPLOYMENT.md), [signed build](ANDROID_RELEASE.md); relative document links resolve |
 | Security / privacy | PASS for documented scope — [implementation and artifact review](SECURITY.md), [actual data handling and v1 limits](PRIVACY.md) |
 | Secret scan | PASS — 122 tracked files, recognizable secret patterns and known local signing/database/JWT/SSH password values checked without displaying values; actual APK separately checked |
-| Git clean / remote synchronization | Final commit/push verification pending |
+| Git clean / remote synchronization | PASS — Release source/docs commit `efdbf2f223a36f7245518a5e994eec78e35186a2` pushed; git status was empty and remote main matched exactly before this readiness record |
 
 ## Final verification commands
 
@@ -34,5 +36,7 @@ Get-FileHash dist/XichuFinance-v1.0.0.apk -Algorithm SHA256
 ```
 
 The status command must print no changes and the local/remote commit IDs must match. Never stage ignored secrets or APKs to obtain a clean status. The private signing key/credential backup remains outside the repository. Binary artifacts, checksum sidecars and release notes are in local `dist/`; source/docs are versioned separately.
+
+The readiness record is a following documentation commit; clean status and matching remote are checked again after its push. Final artifacts and their sidecars, install guide, release notes and license have a byte-verified backup under the owner's private release backup directory. The signing backup was also rechecked. The final APK cold launch successfully resynchronized through production HTTPS.
 
 Acceptance is for a personal bookkeeping v1, with [explicit limits](RELEASE_NOTES_v1.0.0.md). No claim is made of banking-grade security, all-device coverage, Play submission, automatic backups or configured external AI.
