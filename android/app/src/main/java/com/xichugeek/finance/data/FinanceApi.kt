@@ -164,14 +164,19 @@ interface FinanceApi {
 
 object ApiClient {
     val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    // Reuse the TLS connection pool across ViewModels and API instances.
+    // Authorization remains an explicit per-request header, never client state.
+    private val client by lazy {
+        OkHttpClient.Builder()
+            // Public HTTPS handshakes can be slower than the local development API.
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
+            .build()
+    }
 
     fun create(baseUrl: String = BuildConfig.API_BASE_URL): FinanceApi {
         require(BuildConfig.DEBUG || baseUrl.startsWith("https://")) { "Release API 必须使用 HTTPS" }
-        val client = OkHttpClient.Builder()
-            .connectTimeout(8, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .callTimeout(20, TimeUnit.SECONDS)
-            .build()
         return Retrofit.Builder().baseUrl(baseUrl).client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build().create(FinanceApi::class.java)

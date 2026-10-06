@@ -1,6 +1,12 @@
 # Xichu Finance 小白运行教程
 
-本教程使用虚构账单。当前本地开发功能已完成，生产部署和签名 APK 的验收状态见 [PHASE_STATUS](PHASE_STATUS.md)。只操作当前 `XichuFinance` 仓库；Android 在 `android`，后端在 `backend`。
+本教程使用虚构账单。本地功能、生产 HTTPS 和签名 Release APK 已完成真实验收，见 [PHASE_STATUS](PHASE_STATUS.md)。只操作当前 `XichuFinance` 仓库；Android 在 `android`，后端在 `backend`。
+
+## 只想安装使用，不开发
+
+开发机上的正式安装包是 `dist/XichuFinance-v1.0.0.apk`，旁边有 SHA256 校验文件。把 APK 复制到 Android 8.0 以上手机，在文件管理器中点击安装；系统提示时允许此来源安装，然后打开 Xichu Finance。选择“打开本地账本”，或注册登录独立的云端账本。云端使用生产 HTTPS 接口。
+
+**安装使用不需要 Android Studio、WSL 或 Docker。** 后面的 Step 1–10 是源码开发和本地后端教程。GitHub 克隆只包含源码，其他开发者需用自己的密钥构建；仓库不包含项目所有者的私有签名密钥。安装失败若提示签名冲突，请先保存已有数据，勿直接卸载有真实数据的旧 App。
 
 ## Step 1：准备 Android 环境
 
@@ -125,10 +131,45 @@ python -m venv .venv
 
 Android 在 `android` 目录执行 ` .\gradlew.bat :app:testDebugUnitTest :app:connectedDebugAndroidTest`；模拟器与 Backend 应已启动。
 
-**应该看到：** pytest/Gradle 测试通过，真实 HTTP 输出 `BACKEND_LOCAL = PASS`。该脚本只允许本机 HTTP 地址，创建虚构用户并清理其交易/账户，保留测试用户及分类。
+**应该看到：** pytest/Gradle 测试通过，真实 HTTP 输出 `BACKEND_LOCAL = PASS`。脚本默认只允许本机 HTTP，创建虚构用户并清理其交易/账户，保留测试用户及分类。生产 HTTPS 模式需要专门参数以及服务器所有者对虚构数据写入的授权，不能把本地验证命令直接用于他人的生产服务。
 
 **常见失败 / 解决：** pytest 从仓库根目录启动会找不到 `app`；改到 `backend`。设备 UI 测试要求默认 Debug API 地址和运行中的本地服务。Gradle 设备测试可能在完成后卸载测试 APK/应用，需要重新安装后体验。
 
-## Step 11：生产和签名 APK
+## Step 11：生产服务器
 
-生产部署从只读服务器审计开始，先确认资源、现有反向代理、域名和备份，再确认改动范围及回滚方案。请阅读 [SERVER_DEPLOYMENT](SERVER_DEPLOYMENT.md) 和 [ANDROID_RELEASE](ANDROID_RELEASE.md)。最终产物是 `dist/XichuFinance-v1.0.0.apk`；只有签名检查、HTTPS 实测和 ADB 安装工作流都通过，才记录 [APK_RELEASE = PASS](APK_RELEASE_VALIDATION.md)。当前状态以验收文件为准。
+**执行什么 / 在哪里：** 本项目所有者的生产接口已部署到 `https://finance-api.demo.xichugeek.com/`。浏览器访问它的 `/health` 或 `/docs`。自行部署时，先按 [SERVER_DEPLOYMENT](SERVER_DEPLOYMENT.md) 只读审计资源、现有服务、DNS 和备份，再让服务器所有者确认改动/回滚范围，之后才执行文档中的 SSH 命令。
+
+**应该看到：** health 返回 healthy，HTTPS 证书有效；独立 API/PostgreSQL healthy，数据库无公网端口，原有站点仍可访问。只在获得授权后运行生产虚构账单验收和备份/独立恢复演练。
+
+**常见失败 / 解决：** DNS 未生效时检查新增 A 记录和公共解析；证书失败时检查域名及 80/443，勿跳过 TLS 校验。数据库密码错误应恢复原私密配置，不能删数据卷。具体备份位置、恢复、回滚和现有 Caddy 单文件挂载注意事项均在部署文档。
+
+## Step 12：构建签名 Release
+
+**执行什么 / 在哪里：** 项目所有者的密钥和配置已在仓库外安全保存并单独备份。在仓库根目录运行：
+
+```powershell
+python scripts/build_release.py --instrumentation --bundle
+```
+
+其他开发者需要按 [ANDROID_RELEASE](ANDROID_RELEASE.md) 创建自己的 PKCS12 密钥，设置四个私密签名变量/JSON；它们不能提交到 Git。默认配置文件位置是 `%USERPROFILE%\.xichufinance\signing\signing.credentials.json`。使用自己部署的域名时要先验证生产 HTTPS。
+
+**应该看到：** 干净构建、JVM 测试和 Lint 通过；`dist` 中有 `XichuFinance-v1.0.0.apk`、SHA256 文件以及可选 AAB。APK 必须继续经过 apksigner 签名检查和真实安装验收；构建脚本本身不会代替运行检查。
+
+**常见失败 / 解决：** 缺少签名配置时恢复仓库外的私密文件，不要改用 Debug 密钥。丢失密钥会妨碍兼容更新，必须安全备份。证书/网络失败时检查连接，不要放宽 HTTPS 校验。
+
+## Step 13：安装、检查和使用 Release
+
+**执行什么 / 在哪里：** 仓库根目录，ADB 已加入 PATH；用自己的设备序号替换示例：
+
+```powershell
+Get-FileHash dist/XichuFinance-v1.0.0.apk -Algorithm SHA256
+adb devices
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.0.apk
+adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
+```
+
+**应该看到：** 校验值与 sidecar 一致，安装 Success，启动 status ok。登录/注册后创建测试账户、增删改交易、预览并确认 CSV、重复导入、看统计、问账单，再关闭打开检查数据。自动 Release 工作流命令在构建指南；它会写入虚构生产数据，运行前须取得服务所有者授权。
+
+**常见失败 / 解决：** Debug/Release 签名不同，更新不兼容时先保护原数据。云端断网/连接超时会保留缓存，恢复联网后去设置点“刷新云端账本”；写入超时结果可能不确定，先刷新确认再重试。令牌 12 小时过期后重新登录。真实手机/OEM 行为未完成全覆盖验证。
+
+本项目实际结果及截图见 [APK_RELEASE_VALIDATION](APK_RELEASE_VALIDATION.md)。v1 没有完整账号删除、密码找回和自动备份服务；使用敏感数据前阅读 [隐私](PRIVACY.md) 和 [安全](SECURITY.md)。

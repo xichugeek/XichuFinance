@@ -95,6 +95,7 @@ Compare migration head and row counts with the source. Keep the rehearsal databa
 | Approved DNS | Namecheap BasicDNS A record `finance-api.demo` → `117.55.232.77`; public DNS returned this address. [Saved UI evidence](screenshots/production-dns.png). Existing host records preserved. |
 | Deployed Backend | Git commit `e8b9561f5238a36083f08e0082d3491ecaf6d870`; image `xichufinance-api:e8b9561f5238a36083f08e0082d3491ecaf6d870` |
 | Runtime | API and PostgreSQL healthy; migration `0002_classification_rules (head)`; API runs as `appuser` |
+| Image identity | API `sha256:37d6455609269a0252c828bbdd27005c4a8b23254e31bd9857fd9680dacb6bd7`; PostgreSQL `sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24` |
 | Isolation | Both host port maps `{}`; database only on `xichufinance-prod_finance_database`; both memory limits 536,870,912 bytes |
 | HTTPS | `/health` HTTP 200, `{"status":"healthy"}`; normal certificate/hostname validation; TLS 1.3 |
 | Certificate | Let's Encrypt YE2; valid from 2026-10-06 09:14:02 UTC to 2027-01-04 09:14:01 UTC; renewal managed by existing Caddy |
@@ -103,11 +104,11 @@ Compare migration head and row counts with the source. Keep the rehearsal databa
 | Gateway preservation | Existing bytes retained as prefix; file inode/owner/group/mode preserved; validate/reload passed |
 | Gateway rollback copy | Private `/opt/xichugeek/backups/finance/gateway-Caddyfile-before-20261006T101229Z`, verified byte-for-byte before modification |
 | PostgreSQL volume | `xichufinance-prod_postgres_data`, `/var/lib/docker/volumes/xichufinance-prod_postgres_data/_data` |
-| Actual backup | `scripts/backup_db.sh` produced private `finance-20261006T101639Z-3BGRjU.dump` with verified SHA256 sidecar |
+| Actual backup | Initial private `finance-20261006T101639Z-3BGRjU.dump` plus final post-Release `finance-20261006T105828Z-YTdOVi.dump`; scripts verified archive contents and SHA256 sidecars |
 | Actual restore | Restored to separate `finance_restore_check_20261006`; migration version and all checked values matched: users 4, accounts 1, categories 57, transactions 1, sum `9.87` (fictional) |
 
 The restore rehearsal did not replace the live database. Its fictional live transaction/account were removed after the matching dump was verified; test users/categories and the private recovery archive remain. No unrelated containers, databases or proxy routes were replaced.
 
 The first production API image failed because a private Linux checkout's files were mode 600/700 and root-owned, so the non-root application could not read Alembic configuration. Commit `e8b9561` fixes runtime `COPY --chown=appuser:appuser`; the rebuilt image completed migration and health checks. A Windows HTTPS script run encountered an intermittent TLS handshake timeout; the same complete validator then passed on the server against the public HTTPS domain with normal certificate verification. Final Android production-network validation belongs to the signed Release gate.
 
-Local Compose parsing/isolation/resource checks, Bash syntax and target guards also passed. Backup scheduling/off-server copying are not installed. Signed APK acceptance remains the separate [Release gate](ANDROID_RELEASE.md).
+Local Compose parsing/isolation/resource checks, Bash syntax and target guards also passed. Final server recheck found all five original containers plus two Finance containers healthy; production health remained 200. Backup scheduling/off-server copying are not installed. Signed APK acceptance is recorded separately in the [Release gate](APK_RELEASE_VALIDATION.md).

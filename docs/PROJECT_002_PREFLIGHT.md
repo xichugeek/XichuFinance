@@ -1,5 +1,7 @@
 # PROJECT_002_PREFLIGHT
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Audit date: 2026-10-05 (Asia/Shanghai)  
 Project root: `D:\Project\Android\XichuFinance`  
 Repository: <https://github.com/xichugeek/XichuFinance>

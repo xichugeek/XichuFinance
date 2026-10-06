@@ -1,5 +1,7 @@
 # PHASE 8 — Ask Finance
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Verified locally on 2026-10-06 (Asia/Shanghai).
 
 The Android **问问我的账单** screen sends a question and selected month to `POST /ai/ask`. The Backend maps supported Chinese phrases to a fixed intent, queries only the authenticated user's database rows, and formats the result with a template. No LLM calculates money or receives the question.

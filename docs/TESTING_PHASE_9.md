@@ -1,5 +1,7 @@
 # PHASE 9 — Local testing and review
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Verified on 2026-10-06 (Asia/Shanghai). `LOCAL_TESTING = PASS`; production and signed-release gates remain open.
 
 ## Actual results

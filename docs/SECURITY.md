@@ -1,6 +1,6 @@
 # Security status
 
-This document describes the current implementation. Production and release acceptance are still open; see [phase status](PHASE_STATUS.md).
+This document describes the accepted v1 implementation. Production HTTPS and signed Release runtime checks passed; see [phase status](PHASE_STATUS.md) and [APK evidence](APK_RELEASE_VALIDATION.md). Security review concerns the checks below, not a penetration-test or banking-grade security claim.
 
 ## Implemented
 
@@ -23,10 +23,14 @@ The local HTTP API is for development. Production HTTPS, the separate server pre
 
 CSV previews validate ownership and use signed, expiring tokens with a separate audience from login tokens. Commit checks owned references again and enforces database deduplication. Classification defaults to NoAIProvider; no external credential or data transfer is configured. Ask uses fixed intents and database/templates. An eventual external provider key must remain on the Backend, outside source code, Docker images, and Android APKs.
 
-Registration currently has no email verification, password reset, MFA or abuse-control service in the app. Production proxy limits, backup protection and server permissions must be reviewed during deployment. JWT logout does not revoke a copied token. These are v1 limits, not claims of banking-grade security.
+Registration has no email verification, password reset, MFA or dedicated rate limiting. Caddy's 2 MB request limit, private backup permissions and server isolation were checked; this does not prevent all public registration abuse or denial of service. JWT logout does not revoke a copied token. Room is unencrypted, and there is no complete account deletion/export/retention UI. Backup scheduling and off-server copying are not configured.
 
 ## Before commits and releases
 
 Review staged files for secrets and unexpected files before committing. Pattern scans help find recognizable keys, but also inspect configuration and changed code manually. Never commit a real `.env`, token, database password, signing key, or keystore password. Do not publish Docker diagnostic bundles without reviewing their contents.
 
-The complete project security and secret-scan PASS labels are reserved for the final verified release; they are not claimed by this document.
+## Release review
+
+The dedicated RSA-3072 signing key and credential file are outside the repository with restricted ACLs and a verified private backup. Missing signing credentials fail the build; Debug signing is never substituted. No signing key exists on the server. Actual APK verification confirmed the public HTTPS URL, no Debug HTTP URL, disabled cleartext/backup/debugging and a valid Release signature. Unpacked entries contained no private key/env/credential file or known local signing/database/JWT secret values.
+
+Manual review covered authentication/ownership, money handling, CSV tokens, fixed Ask queries, NoAIProvider, production networks/permissions, signing/build helper and accepted APK configuration. Runtime tests cover user isolation and the signed production workflow. Pattern scanning and known-secret comparisons complement that review; neither proves the absence of every possible secret or vulnerability. Final scan/Git evidence is recorded in [PROJECT_READY](PROJECT_READY.md). Test screenshots contain only fictional records.

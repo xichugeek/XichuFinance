@@ -1,5 +1,7 @@
 # Android Local MVP validation
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Validation date: 2026-10-05 (Asia/Shanghai)
 
 Device: `Pixel_7` Android 35 emulator (`emulator-5554`)

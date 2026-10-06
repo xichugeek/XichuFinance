@@ -22,7 +22,7 @@ def review():
     issues = []
     for name in filter(None, files):
         path = Path(name)
-        if path.name != ".env.example" and (path.name == ".env" or path.name.startswith(".env.") or path.name in {"keystore.properties", "local.properties"} or path.suffix.lower() in {".jks", ".keystore", ".pem", ".key", ".apk", ".aab"}):
+        if path.name != ".env.example" and (path.name == ".env" or path.name.startswith(".env.") or path.name in {"keystore.properties", "local.properties", "signing.credentials.json"} or path.suffix.lower() in {".jks", ".keystore", ".p12", ".pfx", ".pem", ".key", ".apk", ".aab"}):
             issues.append((name, "private file must not be tracked"))
             continue
         data = (ROOT / path).read_bytes()

@@ -15,6 +15,6 @@ Last checked: 2026-10-06 (Asia/Shanghai)
 | PHASE 8 — Ask Finance | PASS locally | [Owned database queries, seven intents, disabled AI templates and device test](ASK_PHASE_8.md). |
 | PHASE 9 — Testing | PASS locally | [Clean build, 16 Backend / 11 JVM / 9 device tests, Lint, migrations and secret review](TESTING_PHASE_9.md). |
 | PHASE 10 — Production Deployment | PASS | [HTTPS, API, existing sites, backup/restore and isolation evidence](SERVER_DEPLOYMENT.md). DNS/server changes were explicitly approved. |
-| PHASE 11 — Release APK | IN PROGRESS | Signing creation approved; production HTTPS verified. Signed clean build and Release runtime acceptance remain pending. |
+| PHASE 11 — Release APK | PASS | Dedicated signing key/backup; clean signed APK/AAB; 11 Release JVM tests, valid signature, actual production device workflow and force-stop/reinstall retention passed. See [actual evidence](APK_RELEASE_VALIDATION.md). |
 
 Production changes are isolated to the approved Finance deployment and its added DNS/proxy route. Acceptance data is fictional; no existing financial data was used.

@@ -1,6 +1,6 @@
-# API (implementation in progress)
+# API
 
-FastAPI serves interactive documentation at `/docs`. The local Compose configuration binds the API to `http://127.0.0.1:8000`. Send the login token as `Authorization: Bearer <access_token>` for all user data endpoints.
+FastAPI serves interactive documentation at `/docs`. Production is `https://finance-api.demo.xichugeek.com/`; local Compose binds to `http://127.0.0.1:8000`. Send the login token as `Authorization: Bearer <access_token>` for all user data endpoints. Never log/share a real token.
 
 | Method | Path | Current behavior |
 | --- | --- | --- |
@@ -27,4 +27,4 @@ FastAPI serves interactive documentation at `/docs`. The local Compose configura
 
 For analytics endpoints, optional `month=YYYY-MM-DD` selects the month containing that date. Money values are decimal strings in JSON. Transaction creation accepts `account_id`, `category_id`, `type` (`income` or `expense`), positive `amount` with up to two fractional digits, `currency` (`CNY`), `description`, and `transaction_date` (`YYYY-MM-DD`). Referenced accounts and categories must belong to the logged-in user.
 
-See [CSV format and privacy](CSV_FORMAT.md). Preview tokens contain private row data and are signed, not encrypted; do not log them. Invalid/expired previews return HTTP 400, another user's preview returns 404, and deleted/changed references return 409. See [classification behavior](CLASSIFICATION_PHASE_7.md) and [Ask Finance limits](ASK_PHASE_8.md). The production HTTPS API is not deployed.
+See [CSV format and privacy](CSV_FORMAT.md). Preview tokens contain private row data and are signed, not encrypted; do not log them. Invalid/expired previews return HTTP 400, another user's preview returns 404, and deleted/changed references return 409. See [classification behavior](CLASSIFICATION_PHASE_7.md), [Ask limits](ASK_PHASE_8.md) and [verified production deployment](SERVER_DEPLOYMENT.md).

@@ -9,6 +9,21 @@ plugins {
 
 val productionApiUrl = providers.gradleProperty("financeProductionApiUrl")
     .orElse("https://finance-api.demo.xichugeek.com/").get()
+val releaseStorePath = providers.environmentVariable("FINANCE_KEYSTORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("FINANCE_KEYSTORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("FINANCE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("FINANCE_KEY_PASSWORD").orNull
+val releaseSigningReady = listOf(releaseStorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword).all { !it.isNullOrBlank() }
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    doLast {
+        require(releaseSigningReady) { "Release signing requires the four FINANCE_KEYSTORE/KEY environment variables; never use Debug signing" }
+        val keyFile = file(requireNotNull(releaseStorePath)).canonicalFile
+        require(keyFile.isFile && !keyFile.toPath().startsWith(rootProject.projectDir.parentFile.canonicalFile.toPath())) {
+            "Release keystore must exist outside the repository"
+        }
+        println("RELEASE_SIGNING_CONFIG_GUARD = PASS")
+    }
+}
 val validateProductionApi = tasks.register("validateProductionApi") {
     doLast {
         val uri = URI(productionApiUrl)
@@ -22,7 +37,7 @@ val validateProductionApi = tasks.register("validateProductionApi") {
         println("PRODUCTION_API_URL_GUARD = PASS")
     }
 }
-tasks.configureEach { if (name == "preReleaseBuild") dependsOn(validateProductionApi) }
+tasks.configureEach { if (name == "preReleaseBuild") dependsOn(validateProductionApi, validateReleaseSigning) }
 
 android {
     namespace = "com.xichugeek.finance"
@@ -37,9 +52,20 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    if (releaseSigningReady) {
+        signingConfigs.create("financeRelease") {
+            storeFile = file(requireNotNull(releaseStorePath))
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
+            storeType = "PKCS12"
+        }
+    }
+    testBuildType = if (providers.gradleProperty("financeReleaseValidation").orNull == "true") "release" else "debug"
 
     buildTypes {
         debug {
@@ -47,6 +73,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            if (releaseSigningReady) signingConfig = signingConfigs.getByName("financeRelease")
             buildConfigField("String", "API_BASE_URL", "\"$productionApiUrl\"")
         }
     }

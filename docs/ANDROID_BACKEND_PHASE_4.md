@@ -1,5 +1,7 @@
 # PHASE 4 — Android and Backend integration
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Status: **ANDROID_BACKEND_LOCAL = PASS** (2026-10-05, Asia/Shanghai). This is local Debug integration acceptance; production API and Release APK acceptance remain open.
 
 ## Actual evidence

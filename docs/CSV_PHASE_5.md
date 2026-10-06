@@ -1,5 +1,7 @@
 # PHASE 5 — CSV import acceptance
 
+This is the historical record for this phase. Later production and Release results are in [current phase status](PHASE_STATUS.md).
+
 Status: **CSV_IMPORT = PASS**, **CSV_DUPLICATE = PASS**, and **BACKEND_LOCAL = PASS** for local development acceptance. Production and final Release acceptance remain open.
 
 ## Actual checks

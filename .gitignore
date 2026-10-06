@@ -1,5 +1,6 @@
 .gradle/
 **/.gradle/
+**/.kotlin/
 **/build/
 .idea/
 *.iml
@@ -10,6 +11,9 @@ local.properties
 !.env.example
 *.jks
 *.keystore
+*.p12
+*.pfx
+signing.credentials.json
 keystore.properties
 *.pem
 *.key

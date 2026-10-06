@@ -1,43 +1,60 @@
 # Xichu Finance
 
-Xichu Finance is an open source personal finance tracker. Local Android/Backend integration, offline caching, standard CSV import, analytics, classification rules and Ask Finance have passed real runtime validation. Production HTTPS and the signed release APK are still being developed; see [verified phase status](docs/PHASE_STATUS.md).
+Xichu Finance is an open source personal bookkeeping app with separate local and cloud ledgers. The production HTTPS API and signed Android v1.0.0 have passed real acceptance on an Android 15 emulator. See [phase status](docs/PHASE_STATUS.md), [release notes](docs/RELEASE_NOTES_v1.0.0.md) and [actual APK evidence](docs/APK_RELEASE_VALIDATION.md).
 
-The app offers separate local and cloud ledgers, with Room caching for offline reading. Local-ledger data is never uploaded automatically; cloud mode stores that user's records on the Backend. All bundled examples are fictional. It never asks for a real card number, CVV, bank password, or identity number. This is a personal bookkeeping project, not a banking system.
+All examples/screenshots are fictional. The app never asks for full bank card numbers, CVV, payment passwords or identity numbers. This is a personal bookkeeping project, not a banking system.
 
-![Android local MVP dashboard](docs/screenshots/android-dashboard.png)
+![Signed Release dashboard](docs/screenshots/release-dashboard.png)
 
-## Current Android stage
+## Features
 
-- Kotlin, Jetpack Compose, Material 3, Navigation Compose, ViewModel, and Room.
-- Local dashboard, transaction create/read/update/delete, accounts, and categories.
-- Monthly analytics, daily expense line chart, category donut chart and standard CSV preview/confirm import.
-- Email/password registration and login, encrypted Android session, isolated per-user cache.
-- User classification rules and shared keywords, with **AI Enhancement Disabled** by default.
-- Seven basic Chinese Ask Finance intents with database-calculated amounts and template answers.
-- Integer minor units for money; no floating point database amounts.
-- A fictional data set is inserted on first launch.
+- Kotlin, Compose, Material 3, Navigation, ViewModel and Room.
+- Accounts, categories, transaction CRUD and exact CNY money arithmetic.
+- Monthly totals, daily expense trends, category charts and largest expenses.
+- Standard CSV preview, confirmation and duplicate skipping.
+- Email/password cloud authentication, Keystore encrypted session and isolated per-user cache.
+- Offline reading; separate local ledger with fictional first-run examples, never uploaded automatically.
+- Personal classification rules and shared keywords.
+- Seven Chinese Ask Finance intents with database-calculated amounts and templates.
+- **AI Enhancement Disabled**: NoAIProvider ships in v1; no paid AI API or key required.
 
-![Analytics](docs/screenshots/android-analytics.png)
+![Signed Release analytics](docs/screenshots/release-analytics.png)
 
-![Ask Finance](docs/screenshots/android-ask.png)
+![Signed Release Ask Finance](docs/screenshots/release-ask.png)
+
+## Install and use
+
+The owner's accepted APK is `dist/XichuFinance-v1.0.0.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
+
+Copy the APK to an Android 8.0+ phone, allow installation from the file manager when prompted, and open Xichu Finance. Choose “打开本地账本” for local use, or register/login for a separate cloud ledger. **Installing/using the Release needs no Docker on your phone or PC.** Docker is needed to run your own Backend.
+
+The accepted Release connects to `https://finance-api.demo.xichugeek.com/`. Cloud accounts start empty: create an account, then add transactions. Keep your password safely; v1 has no password reset. Never uninstall an existing app with needed data to resolve a signing conflict. See [beginner guide / 小白教程](docs/BEGINNER_GUIDE.md).
 
 ## Architecture
 
 Android UI → ViewModel → Repository → Room / Retrofit → FastAPI → PostgreSQL.
 
-The Backend uses SQLAlchemy 2, Pydantic, Alembic, Argon2 password hashes and JWT access tokens. Docker Compose runs one API and one internal database. Money uses integer cents on Android and `NUMERIC`/`Decimal` on the Backend. Core functionality requires no paid AI API; v1 ships NoAIProvider and no external AI adapter.
+Backend: SQLAlchemy 2, Pydantic, Alembic, Argon2 password hashes and 12-hour JWTs. Android uses integer cents/BigInteger aggregates; Backend uses NUMERIC/Decimal. Production uses two isolated Finance containers without host ports and the existing Caddy HTTPS gateway. See [architecture](docs/ARCHITECTURE.md) and [API](docs/API.md).
 
-To build locally on Windows, install Android Studio and the Android SDK, then run from `android/`:
+## Build Android
+
+Install Android Studio, JDK 21 and Android SDK 36.1. From `android/` on Windows:
 
 ```powershell
 .\gradlew.bat :app:assembleDebug
 ```
 
-The project is configured for JDK 21, AGP 9.1.1, Gradle 9.3.1, and Android SDK 36.1. See [the environment audit](docs/PROJECT_002_PREFLIGHT.md) for what was present on the development machine. The Debug APK is an interim development artifact and is not the required signed release APK.
+Version combination: AGP 9.1.1, Gradle 9.3.1, Kotlin 2.2.10. Debug uses the local emulator API `http://10.0.2.2:8000/`. For the owner's existing private signing configuration, run from the repository root:
 
-## Local Backend
+```powershell
+python scripts/build_release.py --instrumentation --bundle
+```
 
-With Python and Docker Engine running, execute from the repository root:
+This requires private credentials outside the checkout. Other developers create their own key using the [Release guide](docs/ANDROID_RELEASE.md). A successful build alone does not establish runtime acceptance.
+
+## Run a local Backend
+
+With Python 3.12 and Docker Engine running, from the repository root:
 
 ```powershell
 python scripts/setup_local_env.py
@@ -45,25 +62,25 @@ docker compose --project-name xichufinance up -d --build --wait
 python scripts/validate_backend.py
 ```
 
-The API docs are at `http://127.0.0.1:8000/docs`. Setup generates ignored local secrets without displaying them. See [Backend setup and validation](docs/BACKEND_PHASE_3.md) for network mirror options and the exact acceptance scope. PostgreSQL has no published host port. Windows Docker Desktop needs its WSL 2 engine and hardware virtualization; Android-only local mode does not require Docker.
+API docs: `http://127.0.0.1:8000/docs`. Setup creates ignored random secrets without displaying or overwriting them. PostgreSQL has no host port. See [local Backend](docs/BACKEND_PHASE_3.md) for network mirror options. Windows Docker Desktop requires WSL 2 and hardware virtualization.
 
-## Learn and use
+## Import, deploy and test
 
-- [Step-by-step beginner guide / 小白教程](docs/BEGINNER_GUIDE.md)
-- [Standard CSV format and import steps](docs/CSV_FORMAT.md): only this format is formally supported; raw bank/WeChat/Alipay formats are not verified.
-- [Classification rules and optional AI limits](docs/CLASSIFICATION_PHASE_7.md)
-- [Ask Finance supported questions](docs/ASK_PHASE_8.md)
-- [Server deployment and safety gates](docs/SERVER_DEPLOYMENT.md)
-- [Signed APK build guide](docs/ANDROID_RELEASE.md) and [actual Release acceptance](docs/APK_RELEASE_VALIDATION.md)
+- [Standard CSV format](docs/CSV_FORMAT.md): raw bank/WeChat/Alipay exports are not verified; convert first.
+- [Classification rules](docs/CLASSIFICATION_PHASE_7.md) and [supported Ask questions](docs/ASK_PHASE_8.md).
+- [Server deployment, backup/restore and rollback](docs/SERVER_DEPLOYMENT.md): audit the server and obtain its owner's approval before DNS, production writes or infrastructure changes.
+- [Signed build/install](docs/ANDROID_RELEASE.md), [Release acceptance](docs/APK_RELEASE_VALIDATION.md) and [final checklist](docs/PROJECT_READY.md).
 
-## Tests
+Backend tests: from `backend/`, install `requirements-dev.txt` in a venv and run `python -m pytest -q`. Android local tests: from `android/`, run `.\gradlew.bat :app:testDebugUnitTest :app:connectedDebugAndroidTest` with the local API/emulator running. The default HTTP validator writes fictional data only to loopback. Its explicit production mode and Release workflow test require the service owner's authorization for fictional writes.
 
-Backend: from `backend`, create a Python venv, install `requirements-dev.txt`, and run `python -m pytest -q`. Android: from `android`, run ` .\gradlew.bat :app:testDebugUnitTest :app:connectedDebugAndroidTest` with the local API/emulator running. The real HTTP script only writes fictional data to a loopback HTTP API. Run `python scripts/secret_review.py` from the repository root before commits, together with manual secret review.
+Recorded results: 16 Backend tests, 11 local JVM tests, 9 local device tests; 11 Release JVM tests and one full signed Release production device workflow. Release Lint has 0 errors / 12 warnings. Run `python scripts/secret_review.py` and manually review changed files before commits.
 
 ## v1 limits
 
-Cloud writes/import/Ask need a network connection. Cached records remain readable offline; there is no pending-write queue. Refresh replaces a user's cache with a complete server snapshot. Local and cloud ledgers are separate. CNY is the only supported currency. JWTs have a 12-hour lifetime without refresh/revocation; no password reset or email verification is implemented. Room data is not encrypted. Questions use limited phrase recognition, and external AI is not configured. See [security](docs/SECURITY.md) and [privacy](docs/PRIVACY.md).
+CNY only. Cloud writes/import/Ask need connectivity; cached records remain readable offline, without a write queue. Refresh uses a complete server snapshot. Local/cloud ledgers remain separate. Intermittent network problems can require manual refresh.
 
-## Status and documentation
+No password reset, email verification, MFA, dedicated registration rate limiting, JWT refresh/revocation or complete user deletion/export/retention UI. Room records are unencrypted. Questions use limited Chinese intents; external AI is not configured. Finance backups/restore were verified, but scheduling and off-server backup service are not configured. Physical devices, OEM transfer and Play submission are not verified. Read [security](docs/SECURITY.md) and [privacy](docs/PRIVACY.md) before using sensitive data.
 
-See [phase status](docs/PHASE_STATUS.md), [Android validation](docs/ANDROID_LOCAL_MVP.md), [analytics validation](docs/ANALYTICS_PHASE_6.md), [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), [security](docs/SECURITY.md), and [privacy](docs/PRIVACY.md). Local Backend/CSV/analytics acceptance passed; production and final release acceptance remain open.
+## License
+
+Project source is licensed under [MIT](LICENSE). Dependencies retain their own licenses. Build/signing instructions do not grant access to the owner's signing key or server credentials.
