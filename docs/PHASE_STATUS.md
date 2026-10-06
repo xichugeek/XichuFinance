@@ -14,7 +14,7 @@ Last checked: 2026-10-06 (Asia/Shanghai)
 | PHASE 7 — Smart Classification | PASS locally | [Rules, shared keywords, disabled AI fallback and real device test](CLASSIFICATION_PHASE_7.md). |
 | PHASE 8 — Ask Finance | PASS locally | [Owned database queries, seven intents, disabled AI templates and device test](ASK_PHASE_8.md). |
 | PHASE 9 — Testing | PASS locally | [Clean build, 16 Backend / 11 JVM / 9 device tests, Lint, migrations and secret review](TESTING_PHASE_9.md). |
-| PHASE 10 — Production Deployment | WAITING FOR APPROVAL / DNS | [Read-only audit](SERVER_PREFLIGHT.md) completed; [deployment files and rollback](SERVER_DEPLOYMENT.md) prepared. New Finance DNS record is absent; no production writes performed. |
-| PHASE 11 — Release APK | NOT STARTED | Requires verified production HTTPS and signing-secret confirmation. |
+| PHASE 10 — Production Deployment | PASS | [HTTPS, API, existing sites, backup/restore and isolation evidence](SERVER_DEPLOYMENT.md). DNS/server changes were explicitly approved. |
+| PHASE 11 — Release APK | IN PROGRESS | Signing creation approved; production HTTPS verified. Signed clean build and Release runtime acceptance remain pending. |
 
-No production server, DNS, signing key, or real financial data has been changed.
+Production changes are isolated to the approved Finance deployment and its added DNS/proxy route. Acceptance data is fictional; no existing financial data was used.

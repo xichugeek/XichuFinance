@@ -2,7 +2,7 @@
 
 审计日期：2026-10-06，Asia/Shanghai。
 
-**服务器资源审计 PASS；生产部署 NOT VERIFIED。** SSH 使用用户提供的连接资料和默认端口 22，并核对本机已有的主机密钥。没有修改服务器配置、DNS、容器、数据库或生产数据。
+**服务器资源审计 PASS。** SSH 使用用户提供的连接资料和默认端口 22，并核对本机已有的主机密钥。只读审计阶段没有修改服务器配置、DNS、容器、数据库或生产数据。后续获准部署已通过，见 [生产验收记录](SERVER_DEPLOYMENT.md)。
 
 ## 实际环境
 
@@ -47,7 +47,7 @@ Caddyfile 为 **单文件只读 bind mount**，不是整个配置目录的挂载
 
 ## DNS 与备份
 
-公共 DNS 查询显示 `finance-api.demo.xichugeek.com` 返回 **NXDOMAIN**，尚不能签发、验证该域名的 HTTPS。拟添加 A 记录：主机名 `finance-api.demo`，地址 `117.55.232.77`。修改前仍需用户确认；如果使用 CDN 代理，需另外验证转发和证书配置。
+只读审计时，公共 DNS 查询显示 `finance-api.demo.xichugeek.com` 返回 **NXDOMAIN**。获准后已在 Namecheap BasicDNS 添加 A 记录：主机名 `finance-api.demo`，地址 `117.55.232.77`；公共 DNS、证书及 HTTPS 均已验证。未更换 nameserver、开启 CDN 或改动已有记录。
 
 已有 `xichugeek-backup.timer`。最近一次服务结果为 `success`、退出码 0，开始时间 2026-10-04 19:15:16 UTC。观察到数据库 `.sql.gz`、WordPress 和配置归档；最新数据库归档约 47 KB，最新 WordPress 归档约 39 MB。
 

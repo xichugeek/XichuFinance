@@ -1,12 +1,12 @@
 # Production deployment guide
 
-Production deployment: **NOT VERIFIED**. [Read-only server audit](SERVER_PREFLIGHT.md) is complete. The Finance DNS record is absent. The files below are a proposed deployment; they have not been applied to the server.
+**PRODUCTION_API = PASS**, verified 2026-10-06 (Asia/Shanghai). [Read-only server audit](SERVER_PREFLIGHT.md) preceded the user's explicit approval for DNS, server deployment, acceptance data and signing. The deployment below has been applied and verified.
 
 ## Change scope and approval
 
 The user's original section 40 and final safety requirements require confirmation before production containers, databases, proxy/DNS changes, signing secrets or production data writes. Obtain that confirmation before executing this guide.
 
-| Path / object | Proposed change |
+| Path / object | Approved change |
 | --- | --- |
 | `/opt/xichufinance` | Finance repository checkout at the accepted Git commit |
 | `/opt/xichufinance/.env.production` | New random Finance-only secrets; root-owned, mode 600 |
@@ -90,6 +90,24 @@ Compare migration head and row counts with the source. Keep the rehearsal databa
 
 ## Current verification
 
-Read-only resource/network/proxy inventory and backup metadata are verified. All three existing HTTPS routes returned HTTP 200. The existing Caddy adapted both original and complete proposed configuration from stdin; the three original route hosts were preserved and the Finance host was added. No Caddy config write, validate/reload or certificate request was performed.
+| Gate | Actual evidence |
+| --- | --- |
+| Approved DNS | Namecheap BasicDNS A record `finance-api.demo` → `117.55.232.77`; public DNS returned this address. [Saved UI evidence](screenshots/production-dns.png). Existing host records preserved. |
+| Deployed Backend | Git commit `e8b9561f5238a36083f08e0082d3491ecaf6d870`; image `xichufinance-api:e8b9561f5238a36083f08e0082d3491ecaf6d870` |
+| Runtime | API and PostgreSQL healthy; migration `0002_classification_rules (head)`; API runs as `appuser` |
+| Isolation | Both host port maps `{}`; database only on `xichufinance-prod_finance_database`; both memory limits 536,870,912 bytes |
+| HTTPS | `/health` HTTP 200, `{"status":"healthy"}`; normal certificate/hostname validation; TLS 1.3 |
+| Certificate | Let's Encrypt YE2; valid from 2026-10-06 09:14:02 UTC to 2027-01-04 09:14:01 UTC; renewal managed by existing Caddy |
+| Core API | `BACKEND_PRODUCTION = PASS`: real HTTPS auth, CRUD, cross-user read/write/delete isolation, money precision, CSV preview/commit/deduplication, Analytics, Classification and Ask |
+| Existing sites | `xichugeek.com`, `www.xichugeek.com` after redirect, and `enterprise.demo.xichugeek.com` each returned HTTPS HTTP 200 after reload |
+| Gateway preservation | Existing bytes retained as prefix; file inode/owner/group/mode preserved; validate/reload passed |
+| Gateway rollback copy | Private `/opt/xichugeek/backups/finance/gateway-Caddyfile-before-20261006T101229Z`, verified byte-for-byte before modification |
+| PostgreSQL volume | `xichufinance-prod_postgres_data`, `/var/lib/docker/volumes/xichufinance-prod_postgres_data/_data` |
+| Actual backup | `scripts/backup_db.sh` produced private `finance-20261006T101639Z-3BGRjU.dump` with verified SHA256 sidecar |
+| Actual restore | Restored to separate `finance_restore_check_20261006`; migration version and all checked values matched: users 4, accounts 1, categories 57, transactions 1, sum `9.87` (fictional) |
 
-Local Compose parsing and isolation/resource assertions, Bash syntax and Python/validation-target guards passed. The local API acceptance script also passed after adding the guarded production mode. The backup script has not yet been run against production. Production HTTPS, new containers, database volume, real backup/restore and signed APK remain **NOT VERIFIED** pending approval and DNS.
+The restore rehearsal did not replace the live database. Its fictional live transaction/account were removed after the matching dump was verified; test users/categories and the private recovery archive remain. No unrelated containers, databases or proxy routes were replaced.
+
+The first production API image failed because a private Linux checkout's files were mode 600/700 and root-owned, so the non-root application could not read Alembic configuration. Commit `e8b9561` fixes runtime `COPY --chown=appuser:appuser`; the rebuilt image completed migration and health checks. A Windows HTTPS script run encountered an intermittent TLS handshake timeout; the same complete validator then passed on the server against the public HTTPS domain with normal certificate verification. Final Android production-network validation belongs to the signed Release gate.
+
+Local Compose parsing/isolation/resource checks, Bash syntax and target guards also passed. Backup scheduling/off-server copying are not installed. Signed APK acceptance remains the separate [Release gate](ANDROID_RELEASE.md).

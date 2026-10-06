@@ -19,7 +19,7 @@ The access-token design has no refresh token or server-side token revocation. A 
 
 Room databases are not encrypted. The app sandbox and device access controls protect local bookkeeping data. Cloud caches are separate for each server/user pair. Logout hides the cached data and preserves its files for later login; local ledger data is independent. `allowBackup=false`, `fullBackupContent=false` and explicit Android 12 cloud/device-transfer exclusions are configured, following [Android's backup documentation](https://developer.android.com/identity/data/autobackup). Manufacturer-specific or future transfer mechanisms have not been runtime-verified.
 
-The local HTTP API is for development. Production requires HTTPS, the separate server preflight, explicit deployment approval, and runtime security verification. No production server or DNS has been changed.
+The local HTTP API is for development. Production HTTPS, the separate server preflight, explicit deployment approval and runtime isolation checks have passed; see [actual server acceptance](SERVER_DEPLOYMENT.md). Production uses two isolated Finance containers without published host ports, a database-only internal network, private mode-600 secrets and mode-700 backup storage. The existing Caddy terminates valid public HTTPS.
 
 CSV previews validate ownership and use signed, expiring tokens with a separate audience from login tokens. Commit checks owned references again and enforces database deduplication. Classification defaults to NoAIProvider; no external credential or data transfer is configured. Ask uses fixed intents and database/templates. An eventual external provider key must remain on the Backend, outside source code, Docker images, and Android APKs.
 
