@@ -1,21 +1,23 @@
 # Android signed Release guide
 
-**APK_RELEASE = PASS**, verified 2026-10-06. Accepted APK: `dist/XichuFinance-v1.0.0.apk`; see [runtime evidence and hashes](APK_RELEASE_VALIDATION.md). Package `com.xichugeek.finance`, version `1.0.0` / code `1`, minimum Android 8.0 (API 26).
+**APK_RELEASE = PASS**, verified 2026-10-06. Accepted APK: `dist/XichuFinance-v1.0.1.apk`; see [runtime evidence and hashes](UI_REFRESH_v1.0.1.md). Package `com.xichugeek.finance`, version `1.0.1` / code `2`, minimum Android 8.0 (API 26).
 
 ## Install the accepted APK
 
 On the development computer, from the repository root with Platform Tools on PATH:
 
 ```powershell
-Get-FileHash dist/XichuFinance-v1.0.0.apk -Algorithm SHA256
+Get-FileHash dist/XichuFinance-v1.0.1.apk -Algorithm SHA256
 adb devices
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.0.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.1.apk
 adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 ```
 
 Use your actual device serial. On a phone, copy the APK and permit installation from the file manager when Android asks. The independent local ledger needs no Docker or server login. Cloud login uses `https://finance-api.demo.xichugeek.com/`; it requires no Docker on the phone or user's PC.
 
 Debug and Release signatures differ. `INSTALL_FAILED_UPDATE_INCOMPATIBLE` means the installed app uses another key. Preserve needed data before removing that app. Only fictional Debug data on a verified emulator was removed during acceptance. Future updates must retain the Release key and increase `versionCode`.
+
+The v1.0.1 UI refresh retains the v1.0.0 Release signer. Install over that version to preserve the ledger and login; do not uninstall it for this update. Historical v1.0.0 acceptance remains in [its original record](APK_RELEASE_VALIDATION.md).
 
 ## Signing key storage
 
@@ -69,9 +71,9 @@ Use the appropriate private alias/password if they differ. Environment variables
 From the repository root; substitute your SDK path:
 
 ```powershell
-& D:/Android/Sdk/build-tools/36.1.0/apksigner.bat verify --verbose --print-certs dist/XichuFinance-v1.0.0.apk
-& D:/Android/Sdk/build-tools/36.1.0/aapt2.exe dump badging dist/XichuFinance-v1.0.0.apk
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.0.apk
+& D:/Android/Sdk/build-tools/36.1.0/apksigner.bat verify --verbose --print-certs dist/XichuFinance-v1.0.1.apk
+& D:/Android/Sdk/build-tools/36.1.0/aapt2.exe dump badging dist/XichuFinance-v1.0.1.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.1.apk
 adb -s emulator-5554 install -r -t android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
 adb -s emulator-5554 shell am instrument -w -e class com.xichugeek.finance.ReleaseWorkflowTest com.xichugeek.finance.test/androidx.test.runner.AndroidJUnitRunner
 ```

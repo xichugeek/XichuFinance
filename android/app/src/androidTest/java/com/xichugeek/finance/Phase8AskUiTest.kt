@@ -43,9 +43,11 @@ class Phase8AskUiTest {
             compose.onNode(hasText("问问我的账单") and hasClickAction()).performClick()
             compose.onNodeWithText("AI Enhancement Disabled").assertIsDisplayed()
             compose.onNodeWithText("输入账单问题").performTextInput("这个月花了多少钱？")
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText("查询账单") and hasClickAction())
             compose.onNodeWithText("查询账单").performClick()
             compose.waitUntil(20_000) { model.state.value.askResult != null && !model.state.value.busy }
             val answer = "${month.year}年${month.monthValue}月支出 0.31 元。"
+            compose.onNode(hasScrollAction()).performScrollToNode(hasText(answer))
             compose.onNodeWithText(answer).assertIsDisplayed()
             assertEquals("database_template", model.state.value.askResult?.source)
             assertEquals(false, model.state.value.askResult?.aiEnabled)

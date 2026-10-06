@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +16,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -27,8 +31,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,7 +39,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -50,7 +51,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -62,16 +62,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.xichugeek.finance.data.AccountEntity
 import com.xichugeek.finance.data.CategoryEntity
-import com.xichugeek.finance.data.FinanceMath
-import com.xichugeek.finance.data.FinanceAnalytics
 import com.xichugeek.finance.data.Money
 import com.xichugeek.finance.data.LedgerDates
 import com.xichugeek.finance.data.TransactionEntity
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
@@ -83,18 +79,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val financeColors = lightColorScheme(
-    primary = Color(0xFF176B5B),
-    secondary = Color(0xFF4A645D),
-    background = Color(0xFFF5F7F3),
-    surface = Color.White,
-)
-
 @Composable
 internal fun FinanceApp(model: FinanceViewModel) {
     val state by model.state.collectAsState()
     val error by model.error.collectAsState()
-    MaterialTheme(colorScheme = financeColors) {
+    FinanceTheme {
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -114,7 +103,7 @@ private fun AuthScreen(state: FinanceUiState, error: String?, model: FinanceView
     var email by rememberSaveable { mutableStateOf("") }
     // Passwords stay in memory only and are not retained in saved instance state.
     var password by remember { mutableStateOf("") }
-    LazyColumn(Modifier.fillMaxSize().statusBarsPadding(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { Spacer(Modifier.height(32.dp)); Text("Xichu Finance", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold) }
         item { Text("让每一笔收支清楚可见", color = MaterialTheme.colorScheme.secondary) }
         item { Text(if (register) "创建云端账户" else "登录云端账本", style = MaterialTheme.typography.titleLarge) }
@@ -141,43 +130,22 @@ private fun FinanceLedger(model: FinanceViewModel) {
         error?.let { snackbar.showSnackbar(it); model.clearError() }
     }
 
-    MaterialTheme(colorScheme = financeColors) {
+    FinanceTheme {
         Scaffold(
+            modifier = Modifier.imePadding(),
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
-                Row(
-                    modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("Xichu Finance", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { nav.navigate("settings") { launchSingleTop = true } }) {
-                        Text(if (state.localMode) "本地 · 设置" else "云端 · 设置")
-                    }
-                }
+                FinanceTopBar(state.localMode) { nav.navigate("settings") { launchSingleTop = true } }
             },
             bottomBar = {
                 if (route in listOf("home", "transactions", "accounts", "categories", "settings")) {
-                    NavigationBar {
-                        listOf(
-                            "home" to "概览",
-                            "transactions" to "交易",
-                            "accounts" to "账户",
-                            "categories" to "分类",
-                            "settings" to "设置",
-                        ).forEach { (destination, label) ->
-                            NavigationBarItem(
-                                selected = route == destination,
-                                onClick = { nav.navigate(destination) { popUpTo("home"); launchSingleTop = true } },
-                                icon = { Text(label.take(1)) },
-                                label = { Text(label) },
-                            )
-                        }
+                    FinanceBottomNavigation(route) { destination ->
+                        nav.navigate(destination) { popUpTo("home"); launchSingleTop = true }
                     }
                 }
             },
         ) { padding ->
-            NavHost(nav, startDestination = "home", modifier = Modifier.padding(padding)) {
+            NavHost(nav, startDestination = "home", modifier = Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize()) {
                 composable("home") { DashboardScreen(state, nav) }
                 composable("transactions") { TransactionsScreen(state, nav) }
                 composable("transaction/new") { TransactionEditor(state, model, nav, null) }
@@ -200,114 +168,6 @@ private fun FinanceLedger(model: FinanceViewModel) {
 }
 
 @Composable
-private fun DashboardScreen(state: FinanceUiState, nav: NavHostController) {
-    val month = YearMonth.now()
-    val current = state.transactions.filter { monthOf(it.transactionDate) == month }
-    val previous = state.transactions.filter { monthOf(it.transactionDate) == month.minusMonths(1) }
-    val summary = FinanceMath.summarize(current)
-    val last = FinanceMath.summarize(previous)
-    val totalBalance = state.accounts.sumOf { FinanceMath.accountBalance(it, state.transactions) }
-    val analysis = FinanceAnalytics.calculate(month, state.transactions, state.categories)
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            Column {
-                Text("你好，今天也清楚掌握每一笔", style = MaterialTheme.typography.titleMedium)
-                Text("${month.year} 年 ${month.monthValue} 月", color = MaterialTheme.colorScheme.secondary)
-                Text(state.syncStatus, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-            }
-        }
-        item { SummaryCard("账户总余额", Money.formatMinor(totalBalance), emphasized = true) }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Box(Modifier.weight(1f)) { SummaryCard("本月收入", Money.formatMinor(summary.incomeMinor)) }
-                Box(Modifier.weight(1f)) { SummaryCard("本月支出", Money.formatMinor(summary.expenseMinor)) }
-            }
-        }
-        item { SummaryCard("本月结余", Money.formatMinor(summary.balanceMinor)) }
-        item {
-            Text(
-                "上月支出 ${Money.formatMinor(last.expenseMinor)} · 本月${if (summary.expenseMinor >= last.expenseMinor) "增加" else "减少"} ${Money.formatMinor((summary.expenseMinor - last.expenseMinor).abs())}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("最近交易", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                OutlinedButton(onClick = { nav.navigate("transactions") }) { Text("查看全部") }
-            }
-        }
-        items(state.transactions.take(5), key = { it.id }) { item ->
-            TransactionRow(item, state, Modifier.clickable { nav.navigate("transaction/${item.id}") })
-        }
-        item { Button(onClick = { nav.navigate("transaction/new") }, modifier = Modifier.fillMaxWidth()) { Text("添加一笔交易") } }
-        item { OutlinedButton(onClick = { nav.navigate("import") }, modifier = Modifier.fillMaxWidth()) { Text("CSV 账单导入") } }
-        item { OutlinedButton(onClick = { nav.navigate("analytics") }, modifier = Modifier.fillMaxWidth()) { Text("统计分析") } }
-        item { OutlinedButton(onClick = { nav.navigate("ask") }, modifier = Modifier.fillMaxWidth()) { Text("问问我的账单") } }
-        item { DailyTrendChart(analysis) }
-        item { CategoryChart(analysis) }
-    }
-}
-
-@Composable
-internal fun SummaryCard(label: String, value: String, emphasized: Boolean = false) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-        Column(Modifier.padding(18.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                value,
-                style = if (emphasized) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Composable
-private fun TransactionsScreen(state: FinanceUiState, nav: NavHostController) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("交易记录", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            Button(onClick = { nav.navigate("transaction/new") }) { Text("添加") }
-        }
-        Spacer(Modifier.height(12.dp))
-        if (state.transactions.isEmpty()) {
-            Text("暂无交易。点击“添加”记录第一笔。")
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(state.transactions, key = { it.id }) { item ->
-                    TransactionRow(item, state, Modifier.clickable { nav.navigate("transaction/${item.id}") })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun TransactionRow(item: TransactionEntity, state: FinanceUiState, modifier: Modifier = Modifier) {
-    val category = state.categories.firstOrNull { it.id == item.categoryId }?.name ?: "未分类"
-    Card(Modifier.fillMaxWidth().then(modifier)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text(item.description, fontWeight = FontWeight.SemiBold)
-                Text("$category · ${LedgerDates.decode(item.transactionDate)}", style = MaterialTheme.typography.bodySmall)
-            }
-            Text(
-                "${if (item.type == "income") "+" else "−"}${Money.formatMinor(item.amountMinor)}",
-                color = if (item.type == "income") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-        }
-    }
-}
-
-@Composable
 private fun TransactionDetail(state: FinanceUiState, model: FinanceViewModel, nav: NavHostController, id: Long?) {
     val item = state.transactions.firstOrNull { it.id == id }
     if (item == null) {
@@ -316,8 +176,8 @@ private fun TransactionDetail(state: FinanceUiState, model: FinanceViewModel, na
     }
     val account = state.accounts.firstOrNull { it.id == item.accountId }?.name ?: "未知账户"
     val category = state.categories.firstOrNull { it.id == item.categoryId }?.name ?: "未分类"
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("交易详情", style = MaterialTheme.typography.headlineSmall)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        PageHeading("交易详情")
         SummaryCard(item.description, "${if (item.type == "income") "+" else "−"}${Money.formatMinor(item.amountMinor)}")
         Text("日期：${LedgerDates.decode(item.transactionDate)}")
         Text("账户：$account")
@@ -355,7 +215,7 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
         contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { Text(if (id == null) "添加交易" else "编辑交易", style = MaterialTheme.typography.headlineSmall) }
+        item { PageHeading(if (id == null) "添加交易" else "编辑交易", "记录金额，留住生活的细节") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = type == "expense", onClick = { type = "expense" }, label = { Text("支出") })
@@ -431,42 +291,11 @@ internal fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -
 }
 
 @Composable
-private fun AccountsScreen(state: FinanceUiState, model: FinanceViewModel) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var kind by rememberSaveable { mutableStateOf("cash") }
-    var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
-    val kinds = listOf("cash" to "现金", "bank" to "银行卡", "credit" to "信用卡", "alipay" to "支付宝", "wechat" to "微信", "other" to "其他")
-    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { Text("我的账户", style = MaterialTheme.typography.headlineSmall) }
-        items(state.accounts, key = { it.id }) { account ->
-            Column {
-                SummaryCard(account.name, Money.formatMinor(FinanceMath.accountBalance(account, state.transactions)))
-                Row {
-                    TextButton(onClick = { editingId = account.id; name = account.name; kind = account.kind }, enabled = !state.busy) { Text("编辑账户") }
-                    TextButton(onClick = { model.deleteAccount(account.id) }, enabled = !state.busy && state.transactions.none { it.accountId == account.id }) { Text("删除空账户") }
-                }
-            }
-        }
-        item { Spacer(Modifier.height(8.dp)); Text(if (editingId == null) "添加账户" else "编辑账户", style = MaterialTheme.typography.titleMedium) }
-        item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("自定义账户名称") }, modifier = Modifier.fillMaxWidth()) }
-        item { Picker("类型", kinds, kinds.indexOfFirst { it.first == kind }.toLong(), { kinds.indexOf(it).toLong() }, { it.second }) { kind = kinds[it.toInt()].first } }
-        item {
-            Button(onClick = {
-                val current = state.accounts.firstOrNull { it.id == editingId }
-                if (current == null) model.addAccount(name, kind) { name = ""; editingId = null }
-                else model.updateAccount(current.copy(name = name, kind = kind)) { name = ""; editingId = null }
-            }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (editingId == null) "添加账户" else "保存账户") }
-            if (editingId != null) TextButton(onClick = { editingId = null; name = "" }) { Text("取消编辑") }
-        }
-    }
-}
-
-@Composable
 private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
     var name by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf("expense") }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { Text("分类管理", style = MaterialTheme.typography.headlineSmall) }
+        item { PageHeading("分类管理", "让每一笔收支各有所属") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = type == "expense", onClick = { type = "expense" }, label = { Text("支出分类") })
@@ -474,7 +303,13 @@ private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
             }
         }
         items(state.categories.filter { it.type == type }, key = { it.id }) { category ->
-            Card(Modifier.fillMaxWidth()) { Text(category.name, modifier = Modifier.padding(16.dp)) }
+            Card(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconBadge(categoryIcon(category.name))
+                    Spacer(Modifier.width(12.dp))
+                    Text(category.name, style = MaterialTheme.typography.titleSmall)
+                }
+            }
         }
         item { Spacer(Modifier.height(8.dp)); Text("添加分类", style = MaterialTheme.typography.titleMedium) }
         item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("分类名称") }, modifier = Modifier.fillMaxWidth()) }
@@ -485,7 +320,7 @@ private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
 @Composable
 private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel, onRules: () -> Unit) {
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { Text("设置", style = MaterialTheme.typography.headlineSmall) }
+        item { PageHeading("设置", "管理账本与同步") }
         item { Text(if (state.localMode) "本地账本" else state.email, style = MaterialTheme.typography.titleMedium) }
         item { Text(state.syncStatus) }
         item { Text("AI Enhancement Disabled", style = MaterialTheme.typography.bodySmall) }
@@ -499,6 +334,3 @@ private fun SettingsScreen(state: FinanceUiState, model: FinanceViewModel, onRul
         item { Text(if (BuildConfig.DEBUG) "开发环境：${BuildConfig.API_BASE_URL}" else "服务：${BuildConfig.API_BASE_URL}", style = MaterialTheme.typography.bodySmall) }
     }
 }
-
-private fun monthOf(timestamp: Long): YearMonth =
-    FinanceAnalytics.monthOf(timestamp)

@@ -2,6 +2,8 @@
 
 Last checked: 2026-10-06 (Asia/Shanghai)
 
+Current Android delivery: **v1.0.1 UI refresh**, same Release signer, version code 2. [Actual layout/CRUD/production workflow results](UI_REFRESH_v1.0.1.md) and [release notes](RELEASE_NOTES_v1.0.1.md). The original phase acceptance history is retained below.
+
 | Phase | Status | Evidence / gate |
 | --- | --- | --- |
 | PHASE 0 — PROJECT_002_PREFLIGHT | PASS | [Environment audit](PROJECT_002_PREFLIGHT.md) |
