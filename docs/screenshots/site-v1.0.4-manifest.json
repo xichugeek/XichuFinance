@@ -1,0 +1,52 @@
+{
+  "captured_utc": "2026-10-07T14:02:05.345486+00:00",
+  "package": "com.xichugeek.finance",
+  "installed_version": "1.0.4",
+  "installed_version_code": 5,
+  "device": "Android emulator / Pixel_7",
+  "capture_method": "adb exec-out screencap -p; unmodified PNG pixels",
+  "data": "Existing fictional Release acceptance ledger: subway 4.00 CNY + breakfast 15.00 CNY; no ledger writes",
+  "ask_result": "2026-10 expense 19.00 CNY, database result; external AI disabled",
+  "screenshots": [
+    {
+      "screen": "dashboard",
+      "file": "site-v1.0.4-dashboard.png",
+      "size": [
+        1080,
+        2400
+      ],
+      "bytes": 203384,
+      "sha256": "a40e4bc9a5249352544fe1a7e92d3322f30136de58ba9c18f30484be49f4c485"
+    },
+    {
+      "screen": "transactions",
+      "file": "site-v1.0.4-transactions.png",
+      "size": [
+        1080,
+        2400
+      ],
+      "bytes": 137987,
+      "sha256": "52ad23abf4af1cfe061d33ce1e4869ee1b0d3d3c9113c6f5cc1d509769a6663b"
+    },
+    {
+      "screen": "analytics",
+      "file": "site-v1.0.4-analytics.png",
+      "size": [
+        1080,
+        2400
+      ],
+      "bytes": 138717,
+      "sha256": "36ccb1fe227da87d889080a559f20549f9c83cccd9915a9719a68c320c233245"
+    },
+    {
+      "screen": "ask",
+      "file": "site-v1.0.4-ask.png",
+      "size": [
+        1080,
+        2400
+      ],
+      "bytes": 220939,
+      "sha256": "2c3512bae80e555660690a93fe8ecccae2f5a07c2e5089168ab903f736c81e6f"
+    }
+  ]
+}

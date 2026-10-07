@@ -6,7 +6,7 @@
 
 All examples/screenshots are fictional. The app never asks for full bank card numbers, CVV, payment passwords or identity numbers. This is a personal bookkeeping project, not a banking system.
 
-![v1.0.3 dashboard — fictional cloud ledger](docs/screenshots/network-v1.0.3-home.png)
+![v1.0.4 dashboard — fictional cloud ledger](docs/screenshots/site-v1.0.4-dashboard.png)
 
 ## Features
 
@@ -20,9 +20,15 @@ All examples/screenshots are fictional. The app never asks for full bank card nu
 - Seven Chinese Ask Finance intents with database-calculated amounts and templates.
 - **AI Enhancement Disabled**: NoAIProvider ships in v1; no paid AI API or key required.
 
-![v1.0.1 analytics — fictional local ledger](docs/screenshots/ui-v1.0.1-analytics.png)
+## Current app screenshots — v1.0.4
 
-![v1.0.1 account cards — fictional local ledger](docs/screenshots/ui-v1.0.1-accounts.png)
+Captured on 2026-10-07 from the installed signed v1.0.4 APK (version code 5), using the existing fictional Release acceptance ledger: subway 4.00 CNY and breakfast 15.00 CNY. These are unmodified emulator screen captures, with no private ledger, email, token or server address shown. Ask uses a supported intent and a real database total; external AI remains disabled. [Capture provenance and SHA256](docs/screenshots/site-v1.0.4-manifest.json). Earlier screenshots remain in their historical validation documents.
+
+![v1.0.4 transactions — fictional cloud ledger](docs/screenshots/site-v1.0.4-transactions.png)
+
+![v1.0.4 analytics — fictional cloud ledger](docs/screenshots/site-v1.0.4-analytics.png)
+
+![v1.0.4 Ask Finance — database total, external AI disabled](docs/screenshots/site-v1.0.4-ask.png)
 
 ## Install and use
 
