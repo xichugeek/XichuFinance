@@ -21,4 +21,4 @@ Current Android delivery: **西楚记账 v1.0.4**, inline account creation/selec
 
 Production changes are isolated to the approved Finance deployment and its added DNS/proxy route. Acceptance data is fictional; no existing financial data was used.
 
-**PROJECT_002_XICHUFINANCE = READY**. All required gates and their practical limits are recorded in [final acceptance](PROJECT_READY.md). APK/AAB/checksums are locally delivered in ignored `dist/`, with separate verified backups; no Play or public GitHub Release publication is claimed.
+**PROJECT_002_XICHUFINANCE = READY**. All required gates and their practical limits are recorded in [final acceptance](PROJECT_READY.md). The official [v1.0.4 GitHub Release](https://github.com/xichugeek/XichuFinance/releases/tag/v1.0.4) was published on 2026-10-07 and marked Latest, with the accepted signed APK and SHA256 sidecar. Its tag points to the existing accepted source commit `5d6cac39f96b6ec24646fed33aef46d398fdc258`; uploaded asset size and SHA256 match the local APK. APK/AAB/checksums also remain locally delivered in ignored `dist/`, with separate verified backups. No Play submission is claimed.

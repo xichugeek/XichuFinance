@@ -4,6 +4,8 @@
 
 ## Install the accepted APK
 
+Download `XichuFinance-v1.0.4.apk` and its `.sha256` sidecar from the [official GitHub Release](https://github.com/xichugeek/XichuFinance/releases/tag/v1.0.4), published on 2026-10-07 and marked Latest. The APK has the same verified bytes and signer as the local artifact. Source code archives are for developers.
+
 On the development computer, from the repository root with Platform Tools on PATH:
 
 ```powershell

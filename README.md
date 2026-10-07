@@ -26,7 +26,9 @@ All examples/screenshots are fictional. The app never asks for full bank card nu
 
 ## Install and use
 
-The owner's accepted APK is `dist/XichuFinance-v1.0.4.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
+Download the official signed APK and SHA256 sidecar from [西楚记账 v1.0.4 — GitHub Release](https://github.com/xichugeek/XichuFinance/releases/tag/v1.0.4). Choose `XichuFinance-v1.0.4.apk` in Assets to install; the Source code archives contain source. This is the accepted APK from `dist/XichuFinance-v1.0.4.apk`, unchanged from verification.
+
+Build outputs remain ignored by Git; cloning this repository gives source, without the owner's private signing key or a downloaded APK. Public users can also [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store submission is claimed.
 
 Copy the APK to an Android 8.0+ phone, allow installation from the file manager when prompted, and open **西楚记账**. Install over the owner's previous signed version to preserve its ledger; do not uninstall for this update. Choose “打开本地账本” for local use, or register/login for a separate cloud ledger. **Installing/using the Release needs no Docker on your phone or PC.** Docker is needed to run your own Backend.
 
