@@ -33,7 +33,7 @@ class ReleaseWorkflowTest {
 
     @Test fun signedReleaseUsesProductionHttpsAndRetainsItsCoreWorkflow() {
         assertFalse(BuildConfig.DEBUG)
-        assertEquals("1.0.2", BuildConfig.VERSION_NAME)
+        assertEquals("1.0.3", BuildConfig.VERSION_NAME)
         assertEquals("https://finance-api.demo.xichugeek.com/", BuildConfig.API_BASE_URL)
         val application = ApplicationProvider.getApplicationContext<Application>()
         runBlocking { SessionStore(application).clear() }
@@ -54,6 +54,27 @@ class ReleaseWorkflowTest {
             compose.waitUntil(75_000) { !model.state.value.busy && (model.state.value.hasLedger || model.error.value != null) }
             assertTrue("Cloud authentication did not activate a ledger: ${model.error.value ?: "no result"}", model.state.value.hasLedger)
             waitFor("已同步到此设备")
+            compose.onNodeWithText("云端 · 设置").assertDoesNotExist()
+            compose.onNodeWithText("云端设置").assertDoesNotExist()
+            click("分类")
+            compose.onNode(list).performScrollToNode(hasSetTextAction() and hasText("分类名称"))
+            field("分类名称").performTextInput("虚构 Release 分类")
+            scrollClick("添加分类")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.categories.any { it.name == "虚构 Release 分类" } }
+            val categoryId = model.state.value.categories.single { it.name == "虚构 Release 分类" }.id
+            compose.onNode(list).performScrollToNode(hasTestTag("category-edit-$categoryId"))
+            compose.onNodeWithTag("category-edit-$categoryId").performClick()
+            compose.onNodeWithTag("edit-category-name").performTextReplacement("虚构 Release 改名分类")
+            click("保存修改")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.categories.any { it.id == categoryId && it.name == "虚构 Release 改名分类" } }
+            compose.onNodeWithTag("category-delete-$categoryId").performClick()
+            click("取消")
+            assertTrue(model.state.value.categories.any { it.id == categoryId })
+            screenshot(application, "release-categories.png")
+            compose.onNodeWithTag("category-delete-$categoryId").performClick()
+            click("确认删除")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.categories.none { it.id == categoryId } }
+            runBlocking { assertTrue(ApiClient.create().categories(requireNotNull(SessionStore(application).load()).authorization).none { it.id == categoryId }) }
             click("账户")
             field("自定义账户名称").performTextInput("虚构 Release 钱包")
             scrollClick("添加账户")
@@ -88,6 +109,15 @@ class ReleaseWorkflowTest {
             waitFor("错误 0 · 重复 2")
             compose.onNode(hasText("确认导入") and hasClickAction()).assertIsNotEnabled()
             scrollClick("返回")
+            click("分类")
+            val usedCategory = model.state.value.categories.single { it.name == "餐饮" && it.type == "expense" }
+            compose.onNode(list).performScrollToNode(hasTestTag("category-delete-${usedCategory.id}"))
+            compose.onNodeWithTag("category-delete-${usedCategory.id}").performClick()
+            compose.onNodeWithText("暂时无法删除").assertExists()
+            compose.onNodeWithText("确认删除").assertDoesNotExist()
+            click("知道了")
+            assertEquals(2, model.state.value.transactions.size)
+            click("概览")
             scrollClick("统计分析")
             compose.onNodeWithText(Money.formatMinor(1900L)).assertExists()
             screenshot(application, "release-analytics.png")

@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,7 +54,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -118,7 +121,7 @@ private fun AuthScreen(state: FinanceUiState, error: String?, model: FinanceView
         item { OutlinedTextField(email, { email = it }, label = { Text("邮箱") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(password, { password = it }, label = { Text("密码（8–128 个字符）") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth()) }
         error?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
-        item { Button(onClick = { model.authenticate(email, password, register) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (state.busy) "正在连接…" else if (register) "注册并登录" else "登录") } }
+        item { Button(onClick = { model.authenticate(email, password, register) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text(if (state.busy) (if (register) "正在注册并登录…" else "正在登录…") else if (register) "注册并登录" else "登录") } }
         item { TextButton(onClick = { register = !register; model.clearError() }, enabled = !state.busy) { Text(if (register) "已有账户，去登录" else "还没有账户？注册") } }
         item { OutlinedButton(onClick = { model.useLocalMode() }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text("打开本地账本") } }
         item { Text("云端账本会将收支保存到服务器。本地账本仅保存在此设备，首次打开含虚构示例。请勿输入银行卡号或支付密码。", style = MaterialTheme.typography.bodySmall) }
@@ -143,7 +146,7 @@ private fun FinanceLedger(model: FinanceViewModel) {
             modifier = Modifier.imePadding(),
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
-                FinanceTopBar(state.localMode) { nav.navigate("settings") { launchSingleTop = true } }
+                FinanceTopBar()
             },
             bottomBar = {
                 if (route in listOf("home", "transactions", "accounts", "categories", "settings")) {
@@ -302,6 +305,44 @@ internal fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -
 private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
     var name by rememberSaveable { mutableStateOf("") }
     var type by rememberSaveable { mutableStateOf("expense") }
+    var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var editName by rememberSaveable { mutableStateOf("") }
+    var deletingId by rememberSaveable { mutableStateOf<Long?>(null) }
+    state.categories.firstOrNull { it.id == editingId }?.let { category ->
+        AlertDialog(
+            onDismissRequest = { if (!state.busy) editingId = null },
+            title = { Text("编辑分类") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(if (category.type == "expense") "支出分类" else "收入分类")
+                    OutlinedTextField(editName, { editName = it }, label = { Text("分类名称") },
+                        singleLine = true, enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("edit-category-name"))
+                    Text("修改名称会同步更新原有交易和规则中的分类名称。", style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = { TextButton(onClick = { model.updateCategory(category.id, editName) { editingId = null } },
+                enabled = !state.busy && editName.isNotBlank()) { Text(if (state.busy) "正在保存…" else "保存修改") } },
+            dismissButton = { TextButton(onClick = { editingId = null }, enabled = !state.busy) { Text("取消") } },
+        )
+    }
+    state.categories.firstOrNull { it.id == deletingId }?.let { category ->
+        val transactions = state.transactions.count { it.categoryId == category.id }
+        val rules = state.rules.count { it.categoryId == category.id }
+        val used = transactions > 0 || rules > 0
+        AlertDialog(
+            onDismissRequest = { if (!state.busy) deletingId = null },
+            title = { Text(if (used) "暂时无法删除" else "删除分类？") },
+            text = { Text(if (used) "“${category.name}”关联了 $transactions 笔交易、$rules 条规则。请先修改交易分类或删除对应规则，再删除此分类。"
+                else "确认删除“${category.name}”？删除后可重新添加。") },
+            confirmButton = {
+                if (used) TextButton(onClick = { deletingId = null }) { Text("知道了") }
+                else TextButton(onClick = { model.deleteCategory(category.id) { deletingId = null } }, enabled = !state.busy) {
+                    Text(if (state.busy) "正在删除…" else "确认删除", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { if (!used) TextButton(onClick = { deletingId = null }, enabled = !state.busy) { Text("取消") } },
+        )
+    }
     LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item { PageHeading("分类管理", "让每一笔收支各有所属") }
         item {
@@ -312,15 +353,28 @@ private fun CategoriesScreen(state: FinanceUiState, model: FinanceViewModel) {
         }
         items(state.categories.filter { it.type == type }, key = { it.id }) { category ->
             Card(Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconBadge(categoryIcon(category.name))
-                    Spacer(Modifier.width(12.dp))
-                    Text(category.name, style = MaterialTheme.typography.titleSmall)
+                Column(Modifier.padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconBadge(categoryIcon(category.name))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(category.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            val count = state.transactions.count { it.categoryId == category.id }
+                            val rules = state.rules.count { it.categoryId == category.id }
+                            Text("$count 笔交易 · $rules 条规则", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { editingId = category.id; editName = category.name }, enabled = !state.busy,
+                            modifier = Modifier.testTag("category-edit-${category.id}")) { Text("编辑") }
+                        TextButton(onClick = { deletingId = category.id }, enabled = !state.busy,
+                            modifier = Modifier.testTag("category-delete-${category.id}")) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                    }
                 }
             }
         }
         item { Spacer(Modifier.height(8.dp)); Text("添加分类", style = MaterialTheme.typography.titleMedium) }
-        item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("分类名称") }, modifier = Modifier.fillMaxWidth()) }
+        item { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("分类名称") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
         item { Button(onClick = { model.addCategory(name, type) { name = "" } }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) { Text("添加分类") } }
     }
 }

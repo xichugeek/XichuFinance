@@ -9,7 +9,7 @@ from app.analytics import router as analytics_router
 from app.classification import router as classification_router
 from app.ask_finance import router as ask_router
 from app.csv_import import router as csv_router
-from app.models import Account, Category, Transaction, User
+from app.models import Account, Category, ClassificationRule, Transaction, User
 from app.schemas import (
     AccountIn,
     AccountOut,
@@ -159,6 +159,30 @@ def create_category(item: CategoryIn, db: Session = Depends(get_db), user: User 
     save_or_conflict(db, "Category already exists")
     db.refresh(category)
     return category
+
+
+@app.put("/categories/{category_id}", response_model=CategoryOut)
+def update_category(category_id: int, item: CategoryIn, db: Session = Depends(get_db), user: User = Depends(current_user)) -> Category:
+    category = owned_category(db, user.id, category_id)
+    # Existing transaction/rule types must continue to match their category.
+    if item.type != category.type:
+        raise HTTPException(status_code=422, detail="Category type cannot be changed")
+    category.name = item.name
+    save_or_conflict(db, "Category already exists")
+    db.refresh(category)
+    return category
+
+
+@app.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_category(category_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)) -> None:
+    category = owned_category(db, user.id, category_id)
+    has_transactions = db.scalar(select(Transaction.id).where(Transaction.user_id == user.id, Transaction.category_id == category_id).limit(1))
+    has_rules = db.scalar(select(ClassificationRule.id).where(ClassificationRule.user_id == user.id, ClassificationRule.category_id == category_id).limit(1))
+    if has_transactions or has_rules:
+        raise HTTPException(status_code=409, detail="Category has transactions or rules")
+    db.delete(category)
+    # Foreign keys also protect against a concurrent transaction/rule insertion.
+    save_or_conflict(db, "Category has transactions or rules")
 
 
 @app.get("/transactions", response_model=list[TransactionOut])

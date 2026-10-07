@@ -150,6 +150,8 @@ interface FinanceApi {
     @DELETE("accounts/{id}") suspend fun deleteAccount(@Header("Authorization") authorization: String, @Path("id") id: Long)
     @GET("categories") suspend fun categories(@Header("Authorization") authorization: String): List<RemoteCategory>
     @POST("categories") suspend fun addCategory(@Header("Authorization") authorization: String, @Body item: CategoryRequest): RemoteCategory
+    @PUT("categories/{id}") suspend fun updateCategory(@Header("Authorization") authorization: String, @Path("id") id: Long, @Body item: CategoryRequest): RemoteCategory
+    @DELETE("categories/{id}") suspend fun deleteCategory(@Header("Authorization") authorization: String, @Path("id") id: Long)
     @GET("transactions") suspend fun transactions(@Header("Authorization") authorization: String): List<RemoteTransaction>
     @POST("transactions") suspend fun addTransaction(@Header("Authorization") authorization: String, @Body item: TransactionRequest): RemoteTransaction
     @PUT("transactions/{id}") suspend fun updateTransaction(@Header("Authorization") authorization: String, @Path("id") id: Long, @Body item: TransactionRequest): RemoteTransaction

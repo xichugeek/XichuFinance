@@ -65,19 +65,15 @@ class FinanceRepository(
         return api.commitCsv(authorization, CsvCommitRequest(preview.token))
     }
 
-    suspend fun refresh() {
+    suspend fun refresh(verifiedUser: RemoteUser? = null) {
         val remote = api ?: return
         val userId = checkNotNull(session).id
-        check(remote.me(authorization).id == userId) { "登录用户不匹配，请重新登录" }
-        // Fetch and validate the complete response before replacing any cached records.
-        val accounts = remote.accounts(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
-        val categories = remote.categories(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
-        val transactions = remote.transactions(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
-        val rules = remote.rules(authorization).onEach { check(it.userId == userId) }.map { it.entity() }
+        val snapshot = readCloudSnapshot(remote, authorization, userId, verifiedUser)
+        // Replace the cache only after every concurrent response has completed and passed ownership checks.
         database.withTransaction {
             dao.clearTransactions(); dao.clearRules(); dao.clearCategories(); dao.clearAccounts()
-            dao.insertAccounts(accounts); dao.insertCategories(categories); dao.insertTransactions(transactions)
-            dao.insertRules(rules)
+            dao.insertAccounts(snapshot.accounts); dao.insertCategories(snapshot.categories); dao.insertTransactions(snapshot.transactions)
+            dao.insertRules(snapshot.rules)
         }
     }
 
@@ -148,11 +144,33 @@ class FinanceRepository(
     }
 
     suspend fun addCategory(name: String, type: String) {
-        require(name.isNotBlank()) { "请输入分类名称" }
+        require(name.isNotBlank() && name.trim().length <= 100) { "分类名称应为 1–100 个字符" }
         require(type == "income" || type == "expense")
         if (api == null) dao.insertCategory(CategoryEntity(name = name.trim(), type = type))
         else dao.cacheCategory(api.addCategory(authorization, CategoryRequest(name.trim(), type))
             .also { check(it.userId == session?.id) }.entity())
+    }
+
+    suspend fun updateCategory(id: Long, name: String) {
+        require(name.isNotBlank() && name.trim().length <= 100) { "分类名称应为 1–100 个字符" }
+        val category = requireNotNull(dao.category(id)) { "分类不存在，请刷新账本" }
+        if (api == null) database.withTransaction {
+            check(dao.updateCategoryName(id, name.trim()) == 1) { "分类不存在" }
+        } else dao.cacheCategory(api.updateCategory(authorization, id, CategoryRequest(name.trim(), category.type))
+            .also { check(it.userId == session?.id && it.id == id && it.type == category.type) }.entity())
+    }
+
+    suspend fun deleteCategory(id: Long) {
+        require(dao.categoryTransactionCount(id) == 0 && dao.categoryRuleCount(id) == 0) {
+            "此分类仍有关联交易或规则，请先修改交易分类或删除对应规则"
+        }
+        api?.deleteCategory(authorization, id)
+        database.withTransaction {
+            require(dao.categoryTransactionCount(id) == 0 && dao.categoryRuleCount(id) == 0) {
+                "此分类仍有关联交易或规则"
+            }
+            check(dao.deleteCategory(id) == 1) { "分类不存在" }
+        }
     }
 
     suspend fun saveTransaction(transaction: TransactionEntity) {

@@ -27,6 +27,7 @@ class Phase9ErrorHandlingTest {
             HttpException(Response.error<Any>(500, "{}".toResponseBody())) to "服务暂时不可用",
             SerializationException("fictional malformed JSON") to "服务返回格式异常",
             SocketTimeoutException("fictional timeout") to "连接失败",
+            CloudRequestTimeout("账本同步超时，请在设置中重试") to "同步超时",
             IOException("fictional offline") to "连接失败",
         )
         for ((index, item) in cases.withIndex()) {

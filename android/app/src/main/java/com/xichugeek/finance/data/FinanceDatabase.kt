@@ -119,6 +119,12 @@ interface FinanceDao {
     suspend fun updateAccount(id: Long, name: String, kind: String, openingBalance: Long): Int
     @Query("DELETE FROM accounts WHERE id = :id") suspend fun deleteAccount(id: Long): Int
 
+    @Query("SELECT * FROM categories WHERE id = :id") suspend fun category(id: Long): CategoryEntity?
+    @Query("UPDATE categories SET name = :name WHERE id = :id") suspend fun updateCategoryName(id: Long, name: String): Int
+    @Query("DELETE FROM categories WHERE id = :id") suspend fun deleteCategory(id: Long): Int
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :id") suspend fun categoryTransactionCount(id: Long): Int
+    @Query("SELECT COUNT(*) FROM classification_rules WHERE categoryId = :id") suspend fun categoryRuleCount(id: Long): Int
+
     @Query("UPDATE transactions SET accountId = :accountId, categoryId = :categoryId, type = :type, amountMinor = :amountMinor, description = :description, transactionDate = :transactionDate, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateTransaction(
         id: Long,

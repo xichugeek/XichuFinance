@@ -11,6 +11,7 @@ FastAPI serves interactive documentation at `/docs`. Production is `https://fina
 | GET, POST | `/accounts` | Lists or creates only the current user's accounts |
 | PUT, DELETE | `/accounts/{id}` | Updates or deletes an owned account; deletion rejects accounts with transactions |
 | GET, POST | `/categories` | Lists or creates only the current user's categories |
+| PUT, DELETE | `/categories/{id}` | Renames an owned category without changing its income/expense type; rejects deletion if any transaction or rule references it |
 | GET, POST | `/transactions` | Lists or creates only the current user's transactions |
 | GET, PUT, DELETE | `/transactions/{id}` | Reads, updates, or deletes an owned transaction |
 | GET | `/analytics/summary` | Month income, expense, balance, and previous month comparison |

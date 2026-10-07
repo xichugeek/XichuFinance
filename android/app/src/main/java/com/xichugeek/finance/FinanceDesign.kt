@@ -113,14 +113,11 @@ internal fun FinanceBrandMark(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun FinanceTopBar(localMode: Boolean, onSettings: () -> Unit) {
+internal fun FinanceTopBar() {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         FinanceBrandMark(Modifier.size(36.dp))
         Spacer(Modifier.width(10.dp))
         Text(stringResource(R.string.app_name), Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        TextButton(onClick = onSettings, contentPadding = PaddingValues(horizontal = 10.dp)) {
-            Text(if (localMode) "本地 · 设置" else "云端 · 设置", fontSize = 12.sp, maxLines = 1)
-        }
     }
 }
 

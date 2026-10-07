@@ -80,7 +80,20 @@ def validate(base_url: str, production: bool = False, confirmed: bool = False) -
         categories = call("GET", "/categories", token_a)
         expense_id = next(row["id"] for row in categories if row["name"] == "餐饮")
         income_id = next(row["id"] for row in categories if row["name"] == "工资")
-        call("POST", "/categories", token_a, {"name": "Fictional validation category", "type": "expense"}, 201)
+        category = call("POST", "/categories", token_a, {"name": "Fictional validation category", "type": "expense"}, 201)
+        category_path = f"/categories/{category['id']}"
+        renamed_category = {"name": "Fictional renamed category", "type": "expense"}
+        call("PUT", category_path, payload=renamed_category, expected=401)
+        call("DELETE", category_path, expected=401)
+        call("PUT", category_path, token_b, renamed_category, 404)
+        call("DELETE", category_path, token_b, expected=404)
+        call("PUT", category_path, token_a, {"name": "餐饮", "type": "expense"}, 409)
+        call("PUT", category_path, token_a, {"name": "  ", "type": "expense"}, 422)
+        call("PUT", category_path, token_a, dict(renamed_category, type="income"), 422)
+        assert call("PUT", category_path, token_a, renamed_category) == dict(category, name=renamed_category["name"])
+        call("DELETE", category_path, token_a, expected=204)
+        call("DELETE", category_path, token_a, expected=404)
+        print("PASS: category rename/delete, validation and cross-user isolation")
         item = {
             "account_id": account_id, "category_id": expense_id, "type": "expense",
             "amount": "0.01", "description": "Fictional precision check",
@@ -91,6 +104,11 @@ def validate(base_url: str, production: bool = False, confirmed: bool = False) -
         assert call("GET", f"/transactions/{tx_id}", token_a)["amount"] == "0.01"
         item["amount"] = "0.10"
         assert call("PUT", f"/transactions/{tx_id}", token_a, item)["amount"] == "0.10"
+        call("PUT", f"/categories/{expense_id}", token_a, {"name": "Fictional meals", "type": "expense"})
+        persisted = call("GET", f"/transactions/{tx_id}", token_a)
+        assert persisted["category_id"] == expense_id and persisted["amount"] == "0.10"
+        call("DELETE", f"/categories/{expense_id}", token_a, expected=409)
+        call("PUT", f"/categories/{expense_id}", token_a, {"name": "餐饮", "type": "expense"})
         for amount, kind, category_id in (("0.20", "expense", expense_id), ("0.01", "expense", expense_id), ("100000000.00", "income", income_id)):
             extra = dict(item, amount=amount, type=kind, category_id=category_id)
             tx_ids.append(call("POST", "/transactions", token_a, extra, 201)["id"])
@@ -129,6 +147,12 @@ def validate(base_url: str, production: bool = False, confirmed: bool = False) -
         rule_item = {"keyword": "咖啡", "type": "expense", "category_id": entertainment, "priority": 10}
         rule = call("POST", "/rules", token_a, rule_item, 201)
         assert call("POST", "/ai/classify", token_a, classification)["category"] == "娱乐"
+        call("PUT", f"/categories/{entertainment}", token_a, {"name": "Fictional entertainment", "type": "expense"})
+        assert call("POST", "/ai/classify", token_a, classification)["category"] == "Fictional entertainment"
+        call("DELETE", f"/categories/{entertainment}", token_a, expected=409)
+        call("PUT", f"/rules/{rule['id']}", token_a, dict(rule_item, enabled=False))
+        call("DELETE", f"/categories/{entertainment}", token_a, expected=409)
+        call("PUT", f"/categories/{entertainment}", token_a, {"name": "娱乐", "type": "expense"})
         assert call("GET", "/rules", token_b) == []
         call("PUT", f"/rules/{rule['id']}", token_b, rule_item, 404)
         call("DELETE", f"/rules/{rule['id']}", token_b, expected=404)
@@ -174,7 +198,7 @@ def validate(base_url: str, production: bool = False, confirmed: bool = False) -
             call("DELETE", f"/transactions/{row['id']}", token_a, expected=204)
         call("DELETE", f"/accounts/{account_id}", token_a, expected=204)
     label = "BACKEND_PRODUCTION" if production else "BACKEND_LOCAL"
-    print(f"{label} = PASS (API/PostgreSQL, CSV, analytics, classification and Ask)")
+    print(f"{label} = PASS (API/PostgreSQL, category management, CSV, analytics, classification and Ask)")
 
 
 if __name__ == "__main__":

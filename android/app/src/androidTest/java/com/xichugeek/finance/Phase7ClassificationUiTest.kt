@@ -32,7 +32,7 @@ class Phase7ClassificationUiTest {
             lateinit var model: FinanceViewModel
             scenario.onActivity { model = ViewModelProvider(it)[FinanceViewModel::class.java] }
             compose.waitUntil(20_000) { !model.state.value.busy && model.state.value.categories.size == 14 }
-            compose.onNodeWithText("云端 · 设置").performClick()
+            compose.onNodeWithText("设置").performClick()
             compose.onNodeWithText("AI Enhancement Disabled").assertExists()
             compose.onNode(hasText("自动分类规则") and hasClickAction()).performClick()
             compose.onNodeWithText("关键词").performTextInput("咖啡")
