@@ -195,6 +195,8 @@ class FinanceViewModel @JvmOverloads constructor(
     }
     fun addAccount(name: String, kind: String, onSuccess: () -> Unit = {}) =
         runAction(onSuccess) { checkNotNull(repository).addAccount(name, kind) }
+    fun addTransactionAccount(name: String, kind: String, onCreated: (AccountEntity) -> Unit) =
+        runAction { onCreated(checkNotNull(repository).addAccount(name, kind)) }
     fun classify(description: String, type: String, onResult: (ClassificationResult) -> Unit) =
         runAction { onResult(checkNotNull(repository).classify(description, type)) }
     fun saveRule(rule: RuleEntity, onSuccess: () -> Unit = {}) = runAction(onSuccess) { checkNotNull(repository).saveRule(rule) }

@@ -26,6 +26,10 @@ class ReleaseWorkflowTest {
     }
     private fun click(text: String) = compose.onNode(hasText(text) and hasClickAction()).performClick()
     private fun field(label: String) = compose.onNode(hasText(label) and hasSetTextAction())
+    private fun scrollField(label: String): SemanticsNodeInteraction {
+        compose.onNode(list).performScrollToNode(hasText(label) and hasSetTextAction())
+        return field(label)
+    }
     private fun scrollClick(text: String) {
         compose.onNode(list).performScrollToNode(hasText(text) and hasClickAction())
         click(text)
@@ -33,7 +37,7 @@ class ReleaseWorkflowTest {
 
     @Test fun signedReleaseUsesProductionHttpsAndRetainsItsCoreWorkflow() {
         assertFalse(BuildConfig.DEBUG)
-        assertEquals("1.0.3", BuildConfig.VERSION_NAME)
+        assertEquals("1.0.4", BuildConfig.VERSION_NAME)
         assertEquals("https://finance-api.demo.xichugeek.com/", BuildConfig.API_BASE_URL)
         val application = ApplicationProvider.getApplicationContext<Application>()
         runBlocking { SessionStore(application).clear() }
@@ -75,25 +79,89 @@ class ReleaseWorkflowTest {
             click("确认删除")
             compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.categories.none { it.id == categoryId } }
             runBlocking { assertTrue(ApiClient.create().categories(requireNotNull(SessionStore(application).load()).authorization).none { it.id == categoryId }) }
-            click("账户")
-            field("自定义账户名称").performTextInput("虚构 Release 钱包")
-            scrollClick("添加账户")
-            compose.waitUntil(60_000) {
-                !model.state.value.busy && model.state.value.accounts.any { it.name == "虚构 Release 钱包" }
-            }
+            assertTrue(model.state.value.accounts.isEmpty())
             click("交易")
             click("添加")
             field("金额（元）").performTextInput("12.34")
             field("描述").performTextInput("虚构 Release 午餐")
+            field("日期 YYYY-MM-DD").performTextReplacement(month.atDay(3).toString())
+            compose.onNode(list).performScrollToNode(hasText("保存交易") and hasClickAction())
+            compose.onNode(hasText("保存交易") and hasClickAction()).assertIsNotEnabled()
+            scrollClick("添加账户")
+            compose.onNodeWithText("添加记账账户").assertExists()
+            compose.onNode(hasText("取消") and hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+            compose.onNode(list).performScrollToNode(hasText("金额（元）") and hasSetTextAction())
+            field("金额（元）").assertTextContains("12.34")
+            scrollClick("添加账户")
+            compose.onNodeWithTag("transaction-account-name").performTextInput("虚构 Release 钱包")
+            click("添加并选择")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.accounts.size == 1 }
+            compose.onNodeWithText("账户：虚构 Release 钱包").assertExists()
+            compose.onNode(list).performScrollToNode(hasText("描述") and hasSetTextAction())
+            scrollField("描述").assertTextContains("虚构 Release 午餐")
+            scrollField("日期 YYYY-MM-DD").assertTextContains(month.atDay(3).toString())
+            screenshot(application, "release-inline-account.png")
             scrollClick("保存交易")
             waitFor("交易记录")
             waitFor("虚构 Release 午餐")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.transactions.size == 1 }
+            val expense = model.state.value.transactions.single()
+            assertEquals(1234L, expense.amountMinor)
+            assertEquals("expense", expense.type)
+            assertEquals(model.state.value.accounts.single().id, expense.accountId)
+            assertEquals(month.atDay(3), LedgerDates.decode(expense.transactionDate))
             click("虚构 Release 午餐")
             waitFor("交易详情")
             click("编辑")
             field("金额（元）").performTextReplacement("10.50")
             scrollClick("保存交易")
             waitFor("交易详情")
+            click("删除交易")
+            waitFor("暂无交易。点击“添加”记录第一笔。")
+            click("添加")
+            click("收入")
+            field("金额（元）").performTextInput("1234.56")
+            field("描述").performTextInput("虚构 Release 工资")
+            field("日期 YYYY-MM-DD").performTextReplacement(month.atDay(4).toString())
+            scrollClick("自动分类")
+            compose.waitUntil(60_000) { !model.state.value.busy }
+            scrollClick("账户：虚构 Release 钱包")
+            click("＋ 添加账户")
+            compose.onNodeWithTag("transaction-account-name").performTextInput("虚构 Release 工资卡")
+            click("账户类型：现金")
+            click("银行卡")
+            click("添加并选择")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.accounts.size == 2 }
+            compose.onNodeWithText("账户：虚构 Release 工资卡").assertExists()
+            scrollClick("账户：虚构 Release 工资卡")
+            click("虚构 Release 钱包")
+            scrollClick("账户：虚构 Release 钱包")
+            click("虚构 Release 工资卡")
+            val selectedId = model.state.value.accounts.single { it.name == "虚构 Release 工资卡" }.id
+            scenario.onActivity { model.addAccount("虚构 Release 备用账户", "other") }
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.accounts.size == 3 }
+            compose.onNodeWithText("账户：虚构 Release 工资卡").assertExists()
+            compose.onNode(list).performScrollToNode(hasText("金额（元）") and hasSetTextAction())
+            scrollField("金额（元）").assertTextContains("1234.56")
+            scrollField("描述").assertTextContains("虚构 Release 工资")
+            scrollField("日期 YYYY-MM-DD").assertTextContains(month.atDay(4).toString())
+            scrollClick("保存交易")
+            waitFor("虚构 Release 工资")
+            compose.waitUntil(60_000) { !model.state.value.busy && model.state.value.transactions.size == 1 }
+            val income = model.state.value.transactions.single()
+            assertEquals("income", income.type)
+            assertEquals(123456L, income.amountMinor)
+            assertEquals(selectedId, income.accountId)
+            assertEquals("bank", model.state.value.accounts.single { it.id == selectedId }.kind)
+            assertEquals("工资", model.state.value.categories.single { it.id == income.categoryId }.name)
+            assertEquals(month.atDay(4), LedgerDates.decode(income.transactionDate))
+            runBlocking {
+                val remote = ApiClient.create().transactions(requireNotNull(SessionStore(application).load()).authorization).single()
+                assertEquals("income", remote.type)
+                assertEquals("1234.56", remote.amount)
+                assertEquals(selectedId, remote.accountId)
+            }
+            click("虚构 Release 工资")
             click("删除交易")
             waitFor("暂无交易。点击“添加”记录第一笔。")
             click("概览")

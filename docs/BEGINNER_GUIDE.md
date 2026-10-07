@@ -4,9 +4,11 @@
 
 ## 只想安装使用，不开发
 
-开发机上的正式安装包是 `dist/XichuFinance-v1.0.3.apk`，旁边有 SHA256 校验文件。把 APK 复制到 Android 8.0 以上手机，在文件管理器中点击安装；系统提示时允许此来源安装，然后打开“西楚记账”。从同签名的旧版更新时直接覆盖安装，不要卸载旧版。选择“打开本地账本”，或注册登录独立的云端账本。云端使用生产 HTTPS 接口。
+开发机上的正式安装包是 `dist/XichuFinance-v1.0.4.apk`，旁边有 SHA256 校验文件。把 APK 复制到 Android 8.0 以上手机，在文件管理器中点击安装；系统提示时允许此来源安装，然后打开“西楚记账”。从同签名的旧版更新时直接覆盖安装，不要卸载旧版。选择“打开本地账本”，或注册登录独立的云端账本。云端使用生产 HTTPS 接口。
 
 **安装使用不需要 Android Studio、WSL 或 Docker。** 后面的 Step 1–10 是源码开发和本地后端教程。GitHub 克隆只包含源码，其他开发者需用自己的密钥构建；仓库不包含项目所有者的私有签名密钥。安装失败若提示签名冲突，请先保存已有数据，勿直接卸载有真实数据的旧 App。
+
+**收支保存提示没有账户怎么办：** 在“添加交易”页面点击“添加账户”，输入自定义名称（例如“现金”或“工资卡”），选择账户类型，点击“添加并选择”。新账户会自动选中，已填金额、描述、日期和收支类型会保留，然后点击“保存交易”。已有账户时点击账户按钮选择；菜单里的“＋ 添加账户”可继续新增。
 
 **分类怎么管理：** 点击底部“分类”，选择“支出分类”或“收入分类”。每张卡片右下方有“编辑”和“删除”：编辑可以修改名称，原有交易和规则会显示新名称；删除需要再次确认。卡片上显示关联的交易和规则数量，有关联时不能删除，请先在交易编辑页改选其他分类，并在“设置 → 自动分类规则”中修改或删除对应规则。收入/支出类型在创建时确定，改名不改变账目的收支类型。右上角重复的设置入口已移除，统一点击底部“设置”。
 
@@ -155,7 +157,7 @@ python scripts/build_release.py --instrumentation --bundle
 
 其他开发者需要按 [ANDROID_RELEASE](ANDROID_RELEASE.md) 创建自己的 PKCS12 密钥，设置四个私密签名变量/JSON；它们不能提交到 Git。默认配置文件位置是 `%USERPROFILE%\.xichufinance\signing\signing.credentials.json`。使用自己部署的域名时要先验证生产 HTTPS。
 
-**应该看到：** 干净构建、JVM 测试和 Lint 通过；`dist` 中有 `XichuFinance-v1.0.3.apk`、SHA256 文件以及可选 AAB。APK 必须继续经过 apksigner 签名检查和真实安装验收；构建脚本本身不会代替运行检查。
+**应该看到：** 干净构建、JVM 测试和 Lint 通过；`dist` 中有 `XichuFinance-v1.0.4.apk`、SHA256 文件以及可选 AAB。APK 必须继续经过 apksigner 签名检查和真实安装验收；构建脚本本身不会代替运行检查。
 
 **常见失败 / 解决：** 缺少签名配置时恢复仓库外的私密文件，不要改用 Debug 密钥。丢失密钥会妨碍兼容更新，必须安全备份。证书/网络失败时检查连接，不要放宽 HTTPS 校验。
 
@@ -164,9 +166,9 @@ python scripts/build_release.py --instrumentation --bundle
 **执行什么 / 在哪里：** 仓库根目录，ADB 已加入 PATH；用自己的设备序号替换示例：
 
 ```powershell
-Get-FileHash dist/XichuFinance-v1.0.3.apk -Algorithm SHA256
+Get-FileHash dist/XichuFinance-v1.0.4.apk -Algorithm SHA256
 adb devices
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.3.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.4.apk
 adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 ```
 
@@ -174,4 +176,4 @@ adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 
 **常见失败 / 解决：** Debug/Release 签名不同，更新不兼容时先保护原数据。云端断网/连接超时会保留缓存，恢复联网后去设置点“刷新云端账本”；写入超时结果可能不确定，先刷新确认再重试。令牌 12 小时过期后重新登录。真实手机/OEM 行为未完成全覆盖验证。
 
-当前登录与同步更新见 [v1.0.3 诊断和验收](RELEASE_NOTES_v1.0.3.md)，名称与图标见 [v1.0.2 截图](RELEASE_NOTES_v1.0.2.md)，此前界面结果见 [v1.0.1 实际验收](UI_REFRESH_v1.0.1.md)。v1 没有完整账号删除、密码找回和自动备份服务；使用敏感数据前阅读 [隐私](PRIVACY.md) 和 [安全](SECURITY.md)。
+当前账户录入修复见 [v1.0.4 实际验收](RELEASE_NOTES_v1.0.4.md)，登录与同步历史见 [v1.0.3 诊断和验收](RELEASE_NOTES_v1.0.3.md)，名称与图标见 [v1.0.2 截图](RELEASE_NOTES_v1.0.2.md)，此前界面结果见 [v1.0.1 实际验收](UI_REFRESH_v1.0.1.md)。v1 没有完整账号删除、密码找回和自动备份服务；使用敏感数据前阅读 [隐私](PRIVACY.md) 和 [安全](SECURITY.md)。

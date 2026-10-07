@@ -213,13 +213,55 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
     var date by rememberSaveable(original?.id) {
         mutableStateOf(original?.let { LedgerDates.decode(it.transactionDate).toString() } ?: LocalDate.now().toString())
     }
-    var accountId by rememberSaveable(original?.id, state.accounts.size) { mutableLongStateOf(original?.accountId ?: state.accounts.firstOrNull()?.id ?: 0L) }
-    var categoryId by rememberSaveable(original?.id, type, state.categories.size) {
+    var accountId by rememberSaveable(original?.id) { mutableLongStateOf(original?.accountId ?: state.accounts.firstOrNull()?.id ?: 0L) }
+    var categoryId by rememberSaveable(original?.id) {
         mutableLongStateOf(original?.categoryId?.takeIf { key -> state.categories.any { it.id == key && it.type == type } }
             ?: state.categories.firstOrNull { it.type == type }?.id ?: 0L)
     }
     val categories = state.categories.filter { it.type == type }
     var classificationMessage by remember { mutableStateOf<String?>(null) }
+    var showAccountDialog by rememberSaveable(original?.id) { mutableStateOf(false) }
+    var accountName by rememberSaveable(original?.id) { mutableStateOf("") }
+    var accountKind by rememberSaveable(original?.id) { mutableStateOf("cash") }
+    val accountKinds = listOf("cash" to "现金", "bank" to "银行卡", "credit" to "信用卡", "alipay" to "支付宝", "wechat" to "微信", "other" to "其他")
+    val error by model.error.collectAsState()
+    val selectedAccount = state.accounts.firstOrNull { it.id == accountId }
+    val selectedCategory = categories.firstOrNull { it.id == categoryId }
+
+    // Refreshing a list must not reset a valid manual choice or a just-created account.
+    LaunchedEffect(state.accounts.map { it.id }) {
+        if (state.accounts.none { it.id == accountId }) accountId = state.accounts.firstOrNull()?.id ?: 0L
+    }
+    LaunchedEffect(type, categories.map { it.id }) {
+        if (categories.none { it.id == categoryId }) categoryId = categories.firstOrNull()?.id ?: 0L
+    }
+    if (showAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!state.busy) showAccountDialog = false },
+            title = { Text("添加记账账户") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("记账账户用于标记钱存放在哪里，如现金、银行卡或支付宝。")
+                    OutlinedTextField(accountName, { accountName = it }, label = { Text("账户名称") },
+                        placeholder = { Text("例如：现金、工资卡、支付宝") }, singleLine = true,
+                        enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("transaction-account-name"))
+                    Picker("账户类型", accountKinds, accountKinds.indexOfFirst { it.first == accountKind }.toLong(),
+                        { accountKinds.indexOf(it).toLong() }, { it.second }, enabled = !state.busy) { accountKind = accountKinds[it.toInt()].first }
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    model.addTransactionAccount(accountName, accountKind) { created ->
+                        accountId = created.id
+                        accountName = ""
+                        showAccountDialog = false
+                    }
+                }, enabled = !state.busy && accountName.isNotBlank()) { Text(if (state.busy) "正在添加…" else "添加并选择") }
+            },
+            dismissButton = { TextButton(onClick = { showAccountDialog = false }, enabled = !state.busy) { Text("取消") } },
+        )
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -250,10 +292,23 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
         }
         item { OutlinedTextField(value = date, onValueChange = { date = it }, label = { Text("日期 YYYY-MM-DD") }, singleLine = true, modifier = Modifier.fillMaxWidth()) }
         item {
-            Picker("账户", state.accounts, accountId, { it.id }, { it.name }) { accountId = it }
+            if (state.accounts.isEmpty()) {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(if (state.busy && state.syncStatus.startsWith("正在同步")) "正在同步账户…" else "先添加一个记账账户", style = MaterialTheme.typography.titleMedium)
+                        Text("收入和支出都需要选择记账账户。添加后会自动选中，已填写的内容会保留。", style = MaterialTheme.typography.bodySmall)
+                        OutlinedButton(onClick = { model.clearError(); showAccountDialog = true }, enabled = !state.busy,
+                            modifier = Modifier.fillMaxWidth()) { Text("添加账户") }
+                    }
+                }
+            } else {
+                Picker("账户", state.accounts, accountId, { it.id }, { it.name }, enabled = !state.busy,
+                    onAdd = { model.clearError(); showAccountDialog = true }) { accountId = it }
+            }
         }
         item {
             Picker("分类", categories, categoryId, { it.id }, { it.name }) { categoryId = it }
+            if (categories.isEmpty()) Text("暂无${if (type == "income") "收入" else "支出"}分类，请先在分类页添加。", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
         item {
             Button(
@@ -278,25 +333,27 @@ private fun TransactionEditor(state: FinanceUiState, model: FinanceViewModel, na
                         model.showError(e.message ?: "请检查输入")
                     }
                 },
-                enabled = !state.busy,
+                enabled = !state.busy && selectedAccount != null && selectedCategory != null,
                 modifier = Modifier.fillMaxWidth(),
-            ) { Text("保存交易") }
+            ) { Text(if (state.busy) "请稍候…" else "保存交易") }
         }
         item { OutlinedButton(onClick = { nav.popBackStack() }, modifier = Modifier.fillMaxWidth()) { Text("取消") } }
     }
 }
 
 @Composable
-internal fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -> Long, title: (T) -> String, onSelected: (Long) -> Unit) {
+internal fun <T> Picker(label: String, items: List<T>, selected: Long, id: (T) -> Long, title: (T) -> String,
+    enabled: Boolean = true, onAdd: (() -> Unit)? = null, onSelected: (Long) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
             Text("$label：${items.firstOrNull { id(it) == selected }?.let(title) ?: "请选择"}")
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             items.forEach { item ->
                 DropdownMenuItem(text = { Text(title(item)) }, onClick = { onSelected(id(item)); expanded = false })
             }
+            onAdd?.let { add -> DropdownMenuItem(text = { Text("＋ 添加账户") }, onClick = { expanded = false; add() }) }
         }
     }
 }

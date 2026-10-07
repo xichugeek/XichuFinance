@@ -2,7 +2,7 @@
 
 Last checked: 2026-10-07 (Asia/Shanghai)
 
-Current Android delivery: **西楚记账 v1.0.3**, category rename/confirmed deletion, bottom Settings entry, login deadlines and concurrent initial sync, same Release signer, version code 4. [Current diagnosis/build/cache/production workflow evidence](RELEASE_NOTES_v1.0.3.md). Branding evidence remains in [v1.0.2](RELEASE_NOTES_v1.0.2.md), layout evidence in [v1.0.1](UI_REFRESH_v1.0.1.md). The original phase acceptance history is retained below.
+Current Android delivery: **西楚记账 v1.0.4**, inline account creation/selection with retained transaction drafts and verified expense/income saves, same Release signer, version code 5. [Current build and signed production workflow evidence](RELEASE_NOTES_v1.0.4.md). [v1.0.3 category/login evidence](RELEASE_NOTES_v1.0.3.md), [v1.0.2 branding](RELEASE_NOTES_v1.0.2.md), and [v1.0.1 layout evidence](UI_REFRESH_v1.0.1.md) are retained. The original phase acceptance history is preserved below.
 
 | Phase | Status | Evidence / gate |
 | --- | --- | --- |

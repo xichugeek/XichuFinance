@@ -122,12 +122,16 @@ class FinanceRepository(
         )
     }
 
-    suspend fun addAccount(name: String, kind: String) {
-        require(name.isNotBlank()) { "请输入账户名称" }
-        if (api == null) dao.insertAccount(AccountEntity(name = name.trim(), kind = kind))
-        else dao.cacheAccount(api.addAccount(authorization, AccountRequest(name.trim(), kind)).also {
-            check(it.userId == session?.id)
-        }.entity())
+    suspend fun addAccount(name: String, kind: String): AccountEntity {
+        require(name.isNotBlank() && name.trim().length <= 100) { "账户名称应为 1–100 个字符" }
+        require(kind in listOf("cash", "bank", "credit", "alipay", "wechat", "other")) { "请选择账户类型" }
+        val account = AccountEntity(name = name.trim(), kind = kind)
+        if (api == null) return account.copy(id = dao.insertAccount(account))
+        val created = api.addAccount(authorization, AccountRequest(account.name, kind)).also {
+            check(it.userId == session?.id && it.id > 0)
+        }.entity()
+        dao.cacheAccount(created)
+        return created
     }
 
     suspend fun updateAccount(account: AccountEntity) {

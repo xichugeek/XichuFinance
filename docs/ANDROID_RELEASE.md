@@ -1,15 +1,15 @@
 # Android signed Release guide
 
-**APK_RELEASE = PASS**, verified 2026-10-07. Accepted APK: `dist/XichuFinance-v1.0.3.apk`, display name **西楚记账**; see [category management, login/sync and production workflow evidence and hashes](RELEASE_NOTES_v1.0.3.md). Package `com.xichugeek.finance`, version `1.0.3` / code `4`, minimum Android 8.0 (API 26). Branding and layout history remains in [v1.0.2](RELEASE_NOTES_v1.0.2.md) and [v1.0.1](UI_REFRESH_v1.0.1.md).
+**APK_RELEASE = PASS**, verified 2026-10-07. Accepted APK: `dist/XichuFinance-v1.0.4.apk`, display name **西楚记账**; see [inline account creation, income/expense saves and production workflow evidence and hashes](RELEASE_NOTES_v1.0.4.md). Package `com.xichugeek.finance`, version `1.0.4` / code `5`, minimum Android 8.0 (API 26). Branding and layout history remains in [v1.0.2](RELEASE_NOTES_v1.0.2.md) and [v1.0.1](UI_REFRESH_v1.0.1.md).
 
 ## Install the accepted APK
 
 On the development computer, from the repository root with Platform Tools on PATH:
 
 ```powershell
-Get-FileHash dist/XichuFinance-v1.0.3.apk -Algorithm SHA256
+Get-FileHash dist/XichuFinance-v1.0.4.apk -Algorithm SHA256
 adb devices
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.3.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.4.apk
 adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 ```
 
@@ -17,7 +17,7 @@ Use your actual device serial. On a phone, copy the APK and permit installation 
 
 Debug and Release signatures differ. `INSTALL_FAILED_UPDATE_INCOMPATIBLE` means the installed app uses another key. Preserve needed data before removing that app. Only fictional Debug data on a verified emulator was removed during acceptance. Future updates must retain the Release key and increase `versionCode`.
 
-The v1.0.3 category management and login/sync update retains the same Release signer as previous versions. Install over them to preserve app data; do not uninstall for this update. Historical v1.0.0 acceptance remains in [its original record](APK_RELEASE_VALIDATION.md).
+The v1.0.4 account-entry fix retains the same Release signer as previous versions. Install over them to preserve app data; do not uninstall for this update. Historical v1.0.0 acceptance remains in [its original record](APK_RELEASE_VALIDATION.md).
 
 ## Signing key storage
 
@@ -71,9 +71,9 @@ Use the appropriate private alias/password if they differ. Environment variables
 From the repository root; substitute your SDK path:
 
 ```powershell
-& D:/Android/Sdk/build-tools/36.1.0/apksigner.bat verify --verbose --print-certs dist/XichuFinance-v1.0.3.apk
-& D:/Android/Sdk/build-tools/36.1.0/aapt2.exe dump badging dist/XichuFinance-v1.0.3.apk
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.3.apk
+& D:/Android/Sdk/build-tools/36.1.0/apksigner.bat verify --verbose --print-certs dist/XichuFinance-v1.0.4.apk
+& D:/Android/Sdk/build-tools/36.1.0/aapt2.exe dump badging dist/XichuFinance-v1.0.4.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.4.apk
 adb -s emulator-5554 install -r -t android/app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
 adb -s emulator-5554 shell am instrument -w -e class com.xichugeek.finance.ReleaseWorkflowTest com.xichugeek.finance.test/androidx.test.runner.AndroidJUnitRunner
 ```
