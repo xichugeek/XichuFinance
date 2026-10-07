@@ -1,10 +1,12 @@
-# Xichu Finance
+# 西楚记账
 
-Xichu Finance is an open source personal bookkeeping app with separate local and cloud ledgers. The production HTTPS API and signed Android v1.0.1 have passed real acceptance on an Android 15 emulator. See [phase status](docs/PHASE_STATUS.md), [release notes](docs/RELEASE_NOTES_v1.0.1.md) and [actual APK evidence](docs/UI_REFRESH_v1.0.1.md).
+西楚记账是一款开源个人记账应用，支持独立的本地和云端账本。当前 Android 签名版为 **v1.0.2**，更新了中文名称和原创图标，已验证覆盖安装、启动及缓存账目保留。见 [版本说明和验收记录](docs/RELEASE_NOTES_v1.0.2.md)、[项目状态](docs/PHASE_STATUS.md)；此前完整生产功能验收见 [v1.0.1 记录](docs/UI_REFRESH_v1.0.1.md)。Repository remains `xichugeek/XichuFinance`.
+
+![西楚记账标志](docs/branding/xichu-jizhang.png)
 
 All examples/screenshots are fictional. The app never asks for full bank card numbers, CVV, payment passwords or identity numbers. This is a personal bookkeeping project, not a banking system.
 
-![v1.0.1 dashboard — fictional local ledger](docs/screenshots/ui-v1.0.1-home.png)
+![v1.0.2 dashboard — fictional cached ledger](docs/screenshots/brand-v1.0.2-home.png)
 
 ## Features
 
@@ -24,9 +26,9 @@ All examples/screenshots are fictional. The app never asks for full bank card nu
 
 ## Install and use
 
-The owner's accepted APK is `dist/XichuFinance-v1.0.1.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
+The owner's accepted APK is `dist/XichuFinance-v1.0.2.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
 
-Copy the APK to an Android 8.0+ phone, allow installation from the file manager when prompted, and open Xichu Finance. Choose “打开本地账本” for local use, or register/login for a separate cloud ledger. **Installing/using the Release needs no Docker on your phone or PC.** Docker is needed to run your own Backend.
+Copy the APK to an Android 8.0+ phone, allow installation from the file manager when prompted, and open **西楚记账**. Install over the owner's previous signed version to preserve its ledger; do not uninstall for this update. Choose “打开本地账本” for local use, or register/login for a separate cloud ledger. **Installing/using the Release needs no Docker on your phone or PC.** Docker is needed to run your own Backend.
 
 The accepted Release connects to `https://finance-api.demo.xichugeek.com/`. Cloud accounts start empty: create an account, then add transactions. Keep your password safely; v1 has no password reset. Never uninstall an existing app with needed data to resolve a signing conflict. See [beginner guide / 小白教程](docs/BEGINNER_GUIDE.md).
 
@@ -69,11 +71,11 @@ API docs: `http://127.0.0.1:8000/docs`. Setup creates ignored random secrets wit
 - [Standard CSV format](docs/CSV_FORMAT.md): raw bank/WeChat/Alipay exports are not verified; convert first.
 - [Classification rules](docs/CLASSIFICATION_PHASE_7.md) and [supported Ask questions](docs/ASK_PHASE_8.md).
 - [Server deployment, backup/restore and rollback](docs/SERVER_DEPLOYMENT.md): audit the server and obtain its owner's approval before DNS, production writes or infrastructure changes.
-- [Signed build/install](docs/ANDROID_RELEASE.md), [Release acceptance](docs/UI_REFRESH_v1.0.1.md) and [final checklist](docs/PROJECT_READY.md).
+- [Signed build/install](docs/ANDROID_RELEASE.md), [current Release acceptance](docs/RELEASE_NOTES_v1.0.2.md) and [final checklist](docs/PROJECT_READY.md).
 
 Backend tests: from `backend/`, install `requirements-dev.txt` in a venv and run `python -m pytest -q`. Android local tests: from `android/`, run `.\gradlew.bat :app:testDebugUnitTest :app:connectedDebugAndroidTest` with the local API/emulator running. The default HTTP validator writes fictional data only to loopback. Its explicit production mode and Release workflow test require the service owner's authorization for fictional writes.
 
-Recorded results: 16 Backend tests, 11 local JVM tests, 9 local device tests; 11 Release JVM tests and one full signed Release production device workflow. v1.0.1 also checks real layouts at 411 dp / normal font and 320 dp / 1.3 font scale. Release Lint has 0 errors / 4 warnings. Run `python scripts/secret_review.py` and manually review changed files before commits.
+Recorded results: 16 Backend tests, 11 local JVM tests, 9 local device tests; 11 Release JVM tests and one full signed Release production device workflow in v1.0.1. v1.0.1 also checks real layouts at 411 dp / normal font and 320 dp / 1.3 font scale. v1.0.2 passed a clean signed build, 11 Release JVM tests, install-over-update and branding smoke checks; its Release Lint has 0 errors / 13 warnings. Run `python scripts/secret_review.py` and manually review changed files before commits.
 
 ## v1 limits
 

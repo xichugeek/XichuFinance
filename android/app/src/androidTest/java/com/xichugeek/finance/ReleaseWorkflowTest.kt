@@ -33,7 +33,7 @@ class ReleaseWorkflowTest {
 
     @Test fun signedReleaseUsesProductionHttpsAndRetainsItsCoreWorkflow() {
         assertFalse(BuildConfig.DEBUG)
-        assertEquals("1.0.1", BuildConfig.VERSION_NAME)
+        assertEquals("1.0.2", BuildConfig.VERSION_NAME)
         assertEquals("https://finance-api.demo.xichugeek.com/", BuildConfig.API_BASE_URL)
         val application = ApplicationProvider.getApplicationContext<Application>()
         runBlocking { SessionStore(application).clear() }

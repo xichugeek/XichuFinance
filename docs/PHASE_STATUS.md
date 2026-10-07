@@ -1,8 +1,8 @@
 # Project phase status
 
-Last checked: 2026-10-06 (Asia/Shanghai)
+Last checked: 2026-10-07 (Asia/Shanghai)
 
-Current Android delivery: **v1.0.1 UI refresh**, same Release signer, version code 2. [Actual layout/CRUD/production workflow results](UI_REFRESH_v1.0.1.md) and [release notes](RELEASE_NOTES_v1.0.1.md). The original phase acceptance history is retained below.
+Current Android delivery: **西楚记账 v1.0.2**, Chinese display name and original adaptive icon, same Release signer, version code 3. [Current build/update/branding evidence](RELEASE_NOTES_v1.0.2.md). Full layout/CRUD/production workflow acceptance was recorded for [v1.0.1](UI_REFRESH_v1.0.1.md). The original phase acceptance history is retained below.
 
 | Phase | Status | Evidence / gate |
 | --- | --- | --- |

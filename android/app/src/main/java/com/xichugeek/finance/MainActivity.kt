@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
@@ -51,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -87,7 +89,8 @@ internal fun FinanceApp(model: FinanceViewModel) {
         when {
             state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("Xichu Finance", style = MaterialTheme.typography.headlineMedium)
+                    FinanceBrandMark(Modifier.size(64.dp))
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
                     CircularProgressIndicator()
                 }
             }
@@ -104,7 +107,12 @@ private fun AuthScreen(state: FinanceUiState, error: String?, model: FinanceView
     // Passwords stay in memory only and are not retained in saved instance state.
     var password by remember { mutableStateOf("") }
     LazyColumn(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        item { Spacer(Modifier.height(32.dp)); Text("Xichu Finance", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold) }
+        item {
+            Spacer(Modifier.height(24.dp))
+            FinanceBrandMark(Modifier.size(64.dp))
+            Spacer(Modifier.height(16.dp))
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        }
         item { Text("让每一笔收支清楚可见", color = MaterialTheme.colorScheme.secondary) }
         item { Text(if (register) "创建云端账户" else "登录云端账本", style = MaterialTheme.typography.titleLarge) }
         item { OutlinedTextField(email, { email = it }, label = { Text("邮箱") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth()) }

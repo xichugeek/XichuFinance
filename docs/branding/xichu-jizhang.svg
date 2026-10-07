@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="18 18 72 72">
+  <title>西楚记账 — 西字印章</title>
+  <desc>Original vector mark. Android launcher layers are in app/src/main/res/drawable/ic_launcher_*.xml.</desc>
+  <defs>
+    <linearGradient id="red" gradientUnits="userSpaceOnUse" x1="16" y1="8" x2="92" y2="108">
+      <stop stop-color="#F74766"/><stop offset="1" stop-color="#CF2247"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="18" width="72" height="72" rx="20" fill="url(#red)"/>
+  <g fill="none" stroke="#FFF" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 34H72" stroke-width="5.5"/>
+    <path d="M37 44H71Q74 44 74 47V71Q74 74 71 74H37Q34 74 34 71V47Q34 44 37 44Z" stroke-width="5"/>
+    <path d="M48 35V49Q48 56 42 59" stroke-width="5"/>
+    <path d="M60 35V54Q60 58 64 58H66" stroke="#FFD18A" stroke-width="5"/>
+  </g>
+</svg>

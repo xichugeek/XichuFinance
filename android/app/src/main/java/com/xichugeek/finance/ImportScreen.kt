@@ -26,7 +26,7 @@ internal fun ImportScreen(state: FinanceUiState, model: FinanceViewModel, onBack
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { Text("CSV 账单导入", style = MaterialTheme.typography.headlineSmall) }
-        item { Text("正式支持 Xichu Finance Standard CSV：UTF-8，最多 512 KiB / 500 行。微信、支付宝和银行原始账单格式尚未验证。") }
+        item { Text("正式支持西楚记账标准 CSV：UTF-8，最多 512 KiB / 500 行。微信、支付宝和银行原始账单格式尚未验证。") }
         item { Text("必填表头：date,description,amount,type,account\n可选表头：category\n日期 YYYY-MM-DD；type 为 income 或 expense；账户名称需与已创建账户一致。", style = MaterialTheme.typography.bodySmall) }
         if (state.localMode) {
             item { Text("CSV 导入需要登录云端账本并联网。选择文件后会上传至 Backend 进行预览，确认前不会写入交易。") }

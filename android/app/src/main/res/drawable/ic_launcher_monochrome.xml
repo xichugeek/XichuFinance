@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Original seal-like 西 monogram; all essential strokes stay inside the adaptive icon safe zone. -->
     <path android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF" android:strokeWidth="5.5" android:strokeLineCap="round" android:pathData="M36,34 H72" />
     <path android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF" android:strokeWidth="5" android:strokeLineJoin="round" android:pathData="M37,44 H71 Q74,44 74,47 V71 Q74,74 71,74 H37 Q34,74 34,71 V47 Q34,44 37,44 Z" />
-    <path android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M48,35 V49 Q48,56 42,59" />
-    <path android:fillColor="@android:color/transparent" android:strokeColor="#FFD18A" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M60,35 V54 Q60,58 64,58 H66" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="#FFFFFF" android:strokeWidth="5" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M48,35 V49 Q48,56 42,59 M60,35 V54 Q60,58 64,58 H66" />
 </vector>

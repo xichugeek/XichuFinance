@@ -1,10 +1,10 @@
-# Xichu Finance 小白运行教程
+# 西楚记账 小白运行教程
 
 本教程使用虚构账单。本地功能、生产 HTTPS 和签名 Release APK 已完成真实验收，见 [PHASE_STATUS](PHASE_STATUS.md)。只操作当前 `XichuFinance` 仓库；Android 在 `android`，后端在 `backend`。
 
 ## 只想安装使用，不开发
 
-开发机上的正式安装包是 `dist/XichuFinance-v1.0.1.apk`，旁边有 SHA256 校验文件。把 APK 复制到 Android 8.0 以上手机，在文件管理器中点击安装；系统提示时允许此来源安装，然后打开 Xichu Finance。选择“打开本地账本”，或注册登录独立的云端账本。云端使用生产 HTTPS 接口。
+开发机上的正式安装包是 `dist/XichuFinance-v1.0.2.apk`，旁边有 SHA256 校验文件。把 APK 复制到 Android 8.0 以上手机，在文件管理器中点击安装；系统提示时允许此来源安装，然后打开“西楚记账”。从同签名的旧版更新时直接覆盖安装，不要卸载旧版。选择“打开本地账本”，或注册登录独立的云端账本。云端使用生产 HTTPS 接口。
 
 **安装使用不需要 Android Studio、WSL 或 Docker。** 后面的 Step 1–10 是源码开发和本地后端教程。GitHub 克隆只包含源码，其他开发者需用自己的密钥构建；仓库不包含项目所有者的私有签名密钥。安装失败若提示签名冲突，请先保存已有数据，勿直接卸载有真实数据的旧 App。
 
@@ -70,7 +70,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.xichugeek.finance/.MainActivity
 ```
 
-**应该看到：** Xichu Finance 登录页。Debug 使用 `http://10.0.2.2:8000/`，这是 Android 模拟器访问宿主电脑的地址。
+**应该看到：** 西楚记账登录页。Debug 使用 `http://10.0.2.2:8000/`，这是 Android 模拟器访问宿主电脑的地址。
 
 **常见失败 / 解决：** `adb devices` 为空时启动模拟器；连接失败时检查 Step 4。`10.0.2.2` 仅适用于标准 Android 模拟器，真机需要单独配置可访问的开发地址。Debug APK 是开发产物，不能替代签名 Release APK。
 
@@ -153,7 +153,7 @@ python scripts/build_release.py --instrumentation --bundle
 
 其他开发者需要按 [ANDROID_RELEASE](ANDROID_RELEASE.md) 创建自己的 PKCS12 密钥，设置四个私密签名变量/JSON；它们不能提交到 Git。默认配置文件位置是 `%USERPROFILE%\.xichufinance\signing\signing.credentials.json`。使用自己部署的域名时要先验证生产 HTTPS。
 
-**应该看到：** 干净构建、JVM 测试和 Lint 通过；`dist` 中有 `XichuFinance-v1.0.1.apk`、SHA256 文件以及可选 AAB。APK 必须继续经过 apksigner 签名检查和真实安装验收；构建脚本本身不会代替运行检查。
+**应该看到：** 干净构建、JVM 测试和 Lint 通过；`dist` 中有 `XichuFinance-v1.0.2.apk`、SHA256 文件以及可选 AAB。APK 必须继续经过 apksigner 签名检查和真实安装验收；构建脚本本身不会代替运行检查。
 
 **常见失败 / 解决：** 缺少签名配置时恢复仓库外的私密文件，不要改用 Debug 密钥。丢失密钥会妨碍兼容更新，必须安全备份。证书/网络失败时检查连接，不要放宽 HTTPS 校验。
 
@@ -162,9 +162,9 @@ python scripts/build_release.py --instrumentation --bundle
 **执行什么 / 在哪里：** 仓库根目录，ADB 已加入 PATH；用自己的设备序号替换示例：
 
 ```powershell
-Get-FileHash dist/XichuFinance-v1.0.1.apk -Algorithm SHA256
+Get-FileHash dist/XichuFinance-v1.0.2.apk -Algorithm SHA256
 adb devices
-adb -s emulator-5554 install -r dist/XichuFinance-v1.0.1.apk
+adb -s emulator-5554 install -r dist/XichuFinance-v1.0.2.apk
 adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 ```
 
@@ -172,4 +172,4 @@ adb -s emulator-5554 shell am start -W -n com.xichugeek.finance/.MainActivity
 
 **常见失败 / 解决：** Debug/Release 签名不同，更新不兼容时先保护原数据。云端断网/连接超时会保留缓存，恢复联网后去设置点“刷新云端账本”；写入超时结果可能不确定，先刷新确认再重试。令牌 12 小时过期后重新登录。真实手机/OEM 行为未完成全覆盖验证。
 
-本项目实际结果及截图见 [v1.0.1 实际验收与截图](UI_REFRESH_v1.0.1.md)。v1 没有完整账号删除、密码找回和自动备份服务；使用敏感数据前阅读 [隐私](PRIVACY.md) 和 [安全](SECURITY.md)。
+当前名称与图标更新见 [v1.0.2 验收与截图](RELEASE_NOTES_v1.0.2.md)，此前完整功能结果见 [v1.0.1 实际验收](UI_REFRESH_v1.0.1.md)。v1 没有完整账号删除、密码找回和自动备份服务；使用敏感数据前阅读 [隐私](PRIVACY.md) 和 [安全](SECURITY.md)。

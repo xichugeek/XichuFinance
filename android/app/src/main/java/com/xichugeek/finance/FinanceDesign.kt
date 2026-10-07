@@ -1,6 +1,7 @@
 package com.xichugeek.finance
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -18,6 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -102,13 +106,18 @@ internal object FinanceIcons {
 }
 
 @Composable
+internal fun FinanceBrandMark(modifier: Modifier = Modifier) {
+    Box(modifier.background(Brush.linearGradient(listOf(Color(0xFFF74766), Color(0xFFCF2247))), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
+        Image(painterResource(R.drawable.ic_brand_mark), contentDescription = null, modifier = Modifier.fillMaxSize())
+    }
+}
+
+@Composable
 internal fun FinanceTopBar(localMode: Boolean, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 20.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(color = FinancePalette.Accent, shape = RoundedCornerShape(11.dp)) {
-            Icon(FinanceIcons.Wallet, null, tint = Color.White, modifier = Modifier.padding(8.dp).size(19.dp))
-        }
+        FinanceBrandMark(Modifier.size(36.dp))
         Spacer(Modifier.width(10.dp))
-        Text("Xichu Finance", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(stringResource(R.string.app_name), Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         TextButton(onClick = onSettings, contentPadding = PaddingValues(horizontal = 10.dp)) {
             Text(if (localMode) "本地 · 设置" else "云端 · 设置", fontSize = 12.sp, maxLines = 1)
         }
