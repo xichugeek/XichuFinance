@@ -2,7 +2,7 @@
 
 Last checked: 2026-10-07 (Asia/Shanghai)
 
-Current Android delivery: **西楚记账 v1.0.2**, Chinese display name and original adaptive icon, same Release signer, version code 3. [Current build/update/branding evidence](RELEASE_NOTES_v1.0.2.md). Full layout/CRUD/production workflow acceptance was recorded for [v1.0.1](UI_REFRESH_v1.0.1.md). The original phase acceptance history is retained below.
+Current Android delivery: **西楚记账 v1.0.3**, category rename/confirmed deletion, bottom Settings entry, login deadlines and concurrent initial sync, same Release signer, version code 4. [Current diagnosis/build/cache/production workflow evidence](RELEASE_NOTES_v1.0.3.md). Branding evidence remains in [v1.0.2](RELEASE_NOTES_v1.0.2.md), layout evidence in [v1.0.1](UI_REFRESH_v1.0.1.md). The original phase acceptance history is retained below.
 
 | Phase | Status | Evidence / gate |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Production deployment guide
 
-**PRODUCTION_API = PASS**, verified 2026-10-06 (Asia/Shanghai). [Read-only server audit](SERVER_PREFLIGHT.md) preceded the user's explicit approval for DNS, server deployment, acceptance data and signing. The deployment below has been applied and verified.
+**PRODUCTION_API = PASS**, last verified 2026-10-07 (Asia/Shanghai). [Read-only server audit](SERVER_PREFLIGHT.md) preceded the user's explicit approval for DNS, server deployment, acceptance data and signing. The first deployment and subsequent category management update are recorded separately below.
 
 ## Change scope and approval
 
@@ -88,7 +88,7 @@ Compare migration head and row counts with the source. Keep the rehearsal databa
 3. After a later app-only update, reselect the saved image tag and start it only when its schema is compatible. Database migration rollback is not automatic; use a reviewed recovery plan if data/schema changed.
 4. Removing a newly added DNS record can be considered separately after approval; account for DNS caches. Do not alter existing DNS records or certificates.
 
-## Current verification
+## First deployment verification (2026-10-06)
 
 | Gate | Actual evidence |
 | --- | --- |
@@ -112,3 +112,23 @@ The restore rehearsal did not replace the live database. Its fictional live tran
 The first production API image failed because a private Linux checkout's files were mode 600/700 and root-owned, so the non-root application could not read Alembic configuration. Commit `e8b9561` fixes runtime `COPY --chown=appuser:appuser`; the rebuilt image completed migration and health checks. A Windows HTTPS script run encountered an intermittent TLS handshake timeout; the same complete validator then passed on the server against the public HTTPS domain with normal certificate verification. Final Android production-network validation belongs to the signed Release gate.
 
 Local Compose parsing/isolation/resource checks, Bash syntax and target guards also passed. Final server recheck found all five original containers plus two Finance containers healthy; production health remained 200. Backup scheduling/off-server copying are not installed. Signed APK acceptance is recorded separately in the [Release gate](APK_RELEASE_VALIDATION.md).
+
+## 2026-10-07 category management update
+
+The owner's standing authorization to finish the server deployment, followed by the explicit category edit/delete request, covered this Finance API update. A fresh read-only inventory and clean repository check preceded the change. Android [v1.0.3](RELEASE_NOTES_v1.0.3.md) adds the corresponding controls.
+
+| Check | Actual result |
+| --- | --- |
+| Deployed source / tag | `a11314027f75f6f850b9e12011ca5bbbe504ed15` / `xichufinance-api:a11314027f75f6f850b9e12011ca5bbbe504ed15` |
+| API image | `sha256:5dbee7c5d3087d03f6c315e52bbbfeff2c9b3fbd2d6a679fb680534afbe0b4e5`; healthy, no OOM, zero restarts |
+| New API scope | Authenticated `PUT /categories/{id}` and `DELETE /categories/{id}`; rename preserves category ID/type; own-user access only; transaction/rule references prevent deletion |
+| Before-update backup | Private `/opt/xichugeek/backups/finance/finance-20261007T051343Z-NESpAa.dump`; `pg_restore --list` and SHA256 verification passed; this dump alone is not a new restore rehearsal |
+| Private env backup | `/opt/xichugeek/backups/finance/env-before-category-20261007T051311Z`, byte-verified, mode 600 |
+| Runtime change | Built Finance API, then `up -d --no-deps --wait finance-api`; only the API container was recreated |
+| Preservation | PostgreSQL and all five unrelated containers retained their IDs/images/health/restart counts; gateway checksum/inode unchanged; env update changed only `FINANCE_RELEASE_TAG`, preserving existing secrets and mode 600 |
+| Database | Existing volume preserved; migration remains `0002_classification_rules (head)`; no new schema migration |
+| HTTPS acceptance | Full `BACKEND_PRODUCTION = PASS`, including category cross-user PUT/DELETE rejection, invalid/duplicate names, fixed type, rename retention and used/disabled-rule deletion protection; fictional validation records only |
+| Existing sites | `xichugeek.com`, `www.xichugeek.com`, `enterprise.demo.xichugeek.com`: normal HTTPS certificate checks, HTTP 200 |
+| Android | Signed production workflow passed in 33.579s, including category actions and retained ledger; see v1.0.3 evidence |
+
+Previous image/tag `e8b9561f5238a36083f08e0082d3491ecaf6d870` was retained for a compatible API-only rollback. DNS and Caddy configuration were not changed during this update. No backup schedule, off-server copy or new restore test is claimed.

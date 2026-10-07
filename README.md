@@ -1,17 +1,17 @@
 # 西楚记账
 
-西楚记账是一款开源个人记账应用，支持独立的本地和云端账本。当前 Android 签名版为 **v1.0.2**，更新了中文名称和原创图标，已验证覆盖安装、启动及缓存账目保留。见 [版本说明和验收记录](docs/RELEASE_NOTES_v1.0.2.md)、[项目状态](docs/PHASE_STATUS.md)；此前完整生产功能验收见 [v1.0.1 记录](docs/UI_REFRESH_v1.0.1.md)。Repository remains `xichugeek/XichuFinance`.
+西楚记账是一款开源个人记账应用，支持独立的本地和云端账本。当前 Android 签名版为 **v1.0.3**，支持分类改名和删除，优化登录与首次同步等待，设置统一从底部进入。保留中文名称和原创图标。见 [版本说明和验收记录](docs/RELEASE_NOTES_v1.0.3.md)、[项目状态](docs/PHASE_STATUS.md)。Repository remains `xichugeek/XichuFinance`.
 
 ![西楚记账标志](docs/branding/xichu-jizhang.png)
 
 All examples/screenshots are fictional. The app never asks for full bank card numbers, CVV, payment passwords or identity numbers. This is a personal bookkeeping project, not a banking system.
 
-![v1.0.2 dashboard — fictional cached ledger](docs/screenshots/brand-v1.0.2-home.png)
+![v1.0.3 dashboard — fictional cloud ledger](docs/screenshots/network-v1.0.3-home.png)
 
 ## Features
 
 - Kotlin, Compose, Material 3, Navigation, ViewModel and Room.
-- Accounts, categories, transaction CRUD and exact CNY money arithmetic.
+- Accounts, category creation/rename/deletion, transaction CRUD and exact CNY money arithmetic. Referenced categories cannot be deleted until their transactions/rules are reassigned or removed.
 - Monthly totals, daily expense trends, category charts and largest expenses.
 - Standard CSV preview, confirmation and duplicate skipping.
 - Email/password cloud authentication, Keystore encrypted session and isolated per-user cache.
@@ -26,7 +26,7 @@ All examples/screenshots are fictional. The app never asks for full bank card nu
 
 ## Install and use
 
-The owner's accepted APK is `dist/XichuFinance-v1.0.2.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
+The owner's accepted APK is `dist/XichuFinance-v1.0.3.apk`, with a SHA256 sidecar. Build outputs are ignored by Git; cloning this repository gives source, not the owner's private signing key or a downloaded APK. Public users can [build an independently signed APK](docs/ANDROID_RELEASE.md). No Play Store or public GitHub Release publication is claimed.
 
 Copy the APK to an Android 8.0+ phone, allow installation from the file manager when prompted, and open **西楚记账**. Install over the owner's previous signed version to preserve its ledger; do not uninstall for this update. Choose “打开本地账本” for local use, or register/login for a separate cloud ledger. **Installing/using the Release needs no Docker on your phone or PC.** Docker is needed to run your own Backend.
 
@@ -71,11 +71,11 @@ API docs: `http://127.0.0.1:8000/docs`. Setup creates ignored random secrets wit
 - [Standard CSV format](docs/CSV_FORMAT.md): raw bank/WeChat/Alipay exports are not verified; convert first.
 - [Classification rules](docs/CLASSIFICATION_PHASE_7.md) and [supported Ask questions](docs/ASK_PHASE_8.md).
 - [Server deployment, backup/restore and rollback](docs/SERVER_DEPLOYMENT.md): audit the server and obtain its owner's approval before DNS, production writes or infrastructure changes.
-- [Signed build/install](docs/ANDROID_RELEASE.md), [current Release acceptance](docs/RELEASE_NOTES_v1.0.2.md) and [final checklist](docs/PROJECT_READY.md).
+- [Signed build/install](docs/ANDROID_RELEASE.md), [current Release acceptance](docs/RELEASE_NOTES_v1.0.3.md) and [final checklist](docs/PROJECT_READY.md).
 
 Backend tests: from `backend/`, install `requirements-dev.txt` in a venv and run `python -m pytest -q`. Android local tests: from `android/`, run `.\gradlew.bat :app:testDebugUnitTest :app:connectedDebugAndroidTest` with the local API/emulator running. The default HTTP validator writes fictional data only to loopback. Its explicit production mode and Release workflow test require the service owner's authorization for fictional writes.
 
-Recorded results: 16 Backend tests, 11 local JVM tests, 9 local device tests; 11 Release JVM tests and one full signed Release production device workflow in v1.0.1. v1.0.1 also checks real layouts at 411 dp / normal font and 320 dp / 1.3 font scale. v1.0.2 passed a clean signed build, 11 Release JVM tests, install-over-update and branding smoke checks; its Release Lint has 0 errors / 13 warnings. Run `python scripts/secret_review.py` and manually review changed files before commits.
+Recorded results: 16 Backend tests, 11 original local JVM tests and 9 original local device tests. v1.0.1 checked real layouts at 411 dp / normal font and 320 dp / 1.3 font scale; v1.0.2 verified branding/update behavior. v1.0.3 passed a clean signed build, 18 Release JVM tests, real device cache/error regression and a full signed production UI workflow over direct HTTPS. Its Release Lint has 0 errors / 14 warnings. Run `python scripts/secret_review.py` and manually review changed files before commits.
 
 ## v1 limits
 

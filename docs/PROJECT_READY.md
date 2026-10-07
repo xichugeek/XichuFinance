@@ -2,7 +2,7 @@
 
 **PROJECT_002_XICHUFINANCE = READY**
 
-The current Android delivery is [西楚记账 v1.0.2](RELEASE_NOTES_v1.0.2.md): Chinese name, original icon, same Release signer, clean build and 11 Release JVM tests passed; install-over-update retained the fictional cached ledger. Complete layout/CRUD/production workflow results are retained in the [v1.0.1 record](UI_REFRESH_v1.0.1.md). The original v1.0.0 acceptance record below is preserved as history; its commit/hash references identify that earlier run.
+The current Android delivery is [西楚记账 v1.0.3](RELEASE_NOTES_v1.0.3.md): category rename/confirmed deletion, bottom Settings entry, bounded login waits, concurrent sync, same Release signer, clean build and 18 Release JVM tests; real cache/error regression and a complete production UI workflow passed over direct HTTPS. Branding and layout evidence are retained in the [v1.0.2](RELEASE_NOTES_v1.0.2.md) and [v1.0.1](UI_REFRESH_v1.0.1.md) records. The original v1.0.0 acceptance record below is preserved as history; its commit/hash references identify that earlier run.
 
 Checked 2026-10-06 (Asia/Shanghai), in the original `XichuFinance` repository. Phase documents preserve the history of each acceptance run. The current state is summarized here and in [PHASE_STATUS](PHASE_STATUS.md).
 
